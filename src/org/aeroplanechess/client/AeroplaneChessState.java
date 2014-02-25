@@ -3,7 +3,7 @@ package org.aeroplanechess.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.ImmutableList;
 
-/* 
+/** 
  * The GameApi state entries used in Aeroplane Chess are:
  * die, action, R0...R3, Y0...Y3, lastTwoRolls, lastTwoMoves
  * These are mapped to the following fields:
@@ -34,13 +34,13 @@ public class AeroplaneChessState {
   private final ImmutableList<Piece> rPieces;
   private final ImmutableList<Piece> yPieces;
   
-  /* 
-   * lastTwoRolls is [-1, -1] if there are no rolls yet by the current player
-   * Previous roll is stored in lastTwoRolls[0], the roll 2 turns ago in lastTwoRolls[1] 
+  /** 
+   * lastTwoRolls is [-1, -1] if there are no rolls yet by the current player.
+   * Previous roll is stored in lastTwoRolls[0], the roll 2 turns ago in lastTwoRolls[1].
    */
   private final ImmutableList<Integer> lastTwoRolls; 
   
-  /* 
+  /** 
    * lastTwoMoves is composed of Strings, each char of which is a piece that was moved in
    * the last two moves.  For example, if I moved piece 3 and then the stacked pieces 1 and 2,
    * lastTwoMoves would store ["12", "3"]. Reset to ["", ""] if no moves made yet by the player.

@@ -9,6 +9,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.List;
 import java.util.Map;
 
+import static org.aeroplanechess.client.Constants.*;
 import org.aeroplanechess.client.GameApi.Operation;
 import org.aeroplanechess.client.GameApi.Set;
 import org.aeroplanechess.client.GameApi.SetTurn;
@@ -30,7 +31,7 @@ public class AeroplaneChessLogicTest {
   /* 
    * The GameApi state entries used in Aeroplane Chess are:
    * die: die roll 1-6
-   * action: taxi|move|stack|takeShortcut
+   * action: taxi|initialize|move|stack|takeShortcut|jump
    *     only one action will be allowed per operation set (you cannot set this twice in a MakeMove)
    * R0...R3: [location, stacked|unstacked, faceup|facedown]
    *     where location = H|L|T|F (hangar, launch, track, final stretch) + padded 2-digit number
@@ -42,39 +43,10 @@ public class AeroplaneChessLogicTest {
    * When we send operations on these keys, it will always be in the above order.
    */
   
-  /* Whether piece is face up or face down (only in Hangar can they be face down) */
-  private static final String FACEUP = "faceup";
-  private static final String FACEDOWN = "facedown";
-  
-  /* 
-   * Whether piece is stacked with 1 or more other pieces (only on track/final stretch)
-   * For simplicity I assume that a player can choose to either stack all or none on a space. If
-   * a third/forth piece lands on the same space, then the player has the choice to stack all
-   * or unstack all (including any that were previously stacked). 
-   */
-  private static final String STACKED = "stacked";
-  private static final String UNSTACKED = "unstacked";
-  
-  /* Actions the player can take.  One of: initialize, taxi, move, takeShortcut, stack, jump */
-  private static final String ACTION = "action";  
-  private static final String TAXI = "taxi";
-  private static final String MOVE = "move";
-  private static final String STACK = "stack";
-  private static final String TAKE_SHORTCUT = "takeShortcut";
-  private static final String JUMP = "jump";
-  
-  /* Information needed to send pieces moved on last two moves to hangar (if 3 6's are rolled) */
-  private static final String LAST_TWO_ROLLS = "lastTwoRolls";
-  private static final String LAST_TWO_MOVES = "lastTwoMoves";
-  
-  /* Empty representations for lastTwoRolls and lastTwoMoves */
-  private final List<Integer> emptyRolls = ImmutableList.of(-1, -1);
-  private final List<String> emptyMoves = ImmutableList.of("", "");
-  
   /* Player info */
   private final int rId = 0;
   private final int yId = 1;
-  private final String PLAYER_ID = "playerId";  
+  private static final String PLAYER_ID = "playerId";  
   private final Map<String, Object> rInfo = ImmutableMap.<String, Object>of(PLAYER_ID, rId);
   private final Map<String, Object> yInfo = ImmutableMap.<String, Object>of(PLAYER_ID, yId);
   private final List<Map<String, Object>> playersInfo = ImmutableList.of(rInfo, yInfo);
@@ -82,11 +54,6 @@ public class AeroplaneChessLogicTest {
   /* States */
   private final Map<String, Object> emptyState = ImmutableMap.<String, Object>of();
   private final Map<String, Object> nonEmptyState = ImmutableMap.<String, Object>of("k", "v");
-  
-  /* Die info. Range is [DIE_FROM, DIE_TO). */
-  private static final String DIE = "die";
-  private static final int DIE_FROM = 1;
-  private static final int DIE_TO = 7;
   
   private void assertMoveOk(VerifyMove verifyMove) {
     aeroplaneChessLogic.checkMoveIsLegal(verifyMove);
@@ -105,16 +72,16 @@ public class AeroplaneChessLogicTest {
         lastState, lastMove, lastMovePlayerId, ImmutableMap.<Integer, Integer>of());
   }
   
-  /* 
-   * Returns a representation of a piece's location for an unstacked, face up piece
+  /** 
+   * Returns a representation of a piece's location for an unstacked, face up piece.
    * (This is the state for the majority of the pieces on the board.) 
    */
   private ImmutableList<String> getNewPiece(String location) {
     return aeroplaneChessLogic.getNewPiece(location);
   }
   
-  /*
-   * Adds pieces to the board for R and Y players, and rolls the die
+  /**
+   * Adds pieces to the board for R and Y players, and rolls the die.
    */
   private List<Operation> getInitialOperations() {
     return aeroplaneChessLogic.getInitialOperations(rId);
@@ -149,11 +116,11 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T51"))
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
-        .put(LAST_TWO_ROLLS, emptyRolls)  // Turn just switched so these are empty
-        .put(LAST_TWO_MOVES, emptyMoves)   
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  // Turn just switched so these are empty
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)   
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -161,9 +128,9 @@ public class AeroplaneChessLogicTest {
                           // taxi and since roll was not 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAXI),  // Taxi should be legal on a 2
-        new Set("R1", getNewPiece("L00")),  // Taxi plane to launch area
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set("R1", getNewPiece("L01")),  // Taxi plane to launch area
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     assertMoveOk(move(rId, state, operations));
     // Not Y's move
@@ -184,11 +151,11 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T51"))
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
-        .put(LAST_TWO_ROLLS, emptyRolls)  // Turn just switched so these are empty
-        .put(LAST_TWO_MOVES, emptyMoves)   
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  // Turn just switched so these are empty
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)   
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -196,9 +163,9 @@ public class AeroplaneChessLogicTest {
                            // taxi and since roll was not 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAXI),  
-        new Set("Y1", getNewPiece("L00")),  
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  // Clear for other player
+        new Set("Y1", getNewPiece("L01")),  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  // Clear for other player
     
     assertHacker(move(yId, state, operations));
   }
@@ -216,8 +183,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T51"))
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("L01"))  // Y2 was already in Launch zone
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("L02"))  // Y2 was already in Launch zone
         .put("Y3", getNewPiece("H03"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))  
         .put(LAST_TWO_MOVES, ImmutableList.of("1", ""))  // Last move was Y1 to Launch on die-6
@@ -227,8 +194,8 @@ public class AeroplaneChessLogicTest {
         new SetTurn(yId),  // Set turn to myself until I use die: 3 after stack
         // Don't roll die if action is to stack and I previously rolled a 6
         new Set(ACTION, STACK),
-        new Set("Y1", getNewPiece("L00")),
-        new Set("Y2", getNewPiece("L00")),
+        new Set("Y1", getNewPiece("L01")),
+        new Set("Y2", getNewPiece("L02")),
         // Didn't use die on this move, don't set lastTwoRolls
         // A stack counts as "moving" both pieces so replace the last move
         new Set(LAST_TWO_MOVES, ImmutableList.of("12", "")));
@@ -247,8 +214,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))
         .put(LAST_TWO_MOVES, ImmutableList.of("2", ""))  // Last move was R2 to same location as R0
@@ -283,8 +250,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))
         .put(LAST_TWO_MOVES, ImmutableList.of("2", ""))  // Last move: R2 to same location as R0, R1
@@ -354,8 +321,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up -- last move
         .put("R3", getNewPiece("T10"))  // Unstacked, face up -- several moves ago
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1)) 
         .put(LAST_TWO_MOVES, ImmutableList.of("2", ""))  // Last move was R2 to same location as R0
@@ -387,11 +354,11 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up -- not on this turn
         .put("R3", getNewPiece("T25")) 
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
-        .put(LAST_TWO_ROLLS, emptyRolls) 
-        .put(LAST_TWO_MOVES, emptyMoves)  
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS) 
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)  
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -419,8 +386,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T11"))  
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))  // Unstacked, face up
-        .put("Y1", getNewPiece("L00"))  
-        .put("Y2", getNewPiece("H00"))  
+        .put("Y1", getNewPiece("L01"))  
+        .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T45"))  // Unstacked, face up
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))  
         .put(LAST_TWO_MOVES, ImmutableList.of("0", ""))  // Last move was Y0
@@ -451,11 +418,11 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))  // Unstacked, face up
-        .put("Y1", getNewPiece("L00"))  
-        .put("Y2", getNewPiece("H00"))  
+        .put("Y1", getNewPiece("L01"))  
+        .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T13"))  // Unstacked, face up
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves)
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -464,8 +431,8 @@ public class AeroplaneChessLogicTest {
         new Set(ACTION, MOVE),
         new Set("Y0", ImmutableList.of("T17", STACKED, FACEUP)),
         new Set("Y3", ImmutableList.of("T17", STACKED, FACEUP)),
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Reset for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Reset for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertHacker(move(yId, state, operations));
   }
@@ -484,8 +451,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", ImmutableList.of("T36", STACKED, FACEUP))  // Stacked pieces - shortcut space
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
         .put(LAST_TWO_MOVES, ImmutableList.of("02", ""))  // Last move was stacking R0 and R2
@@ -498,8 +465,8 @@ public class AeroplaneChessLogicTest {
         // Move both stacked pieces across shortcut
         new Set("R0", ImmutableList.of("T48", STACKED, FACEUP)),
         new Set("R2", ImmutableList.of("T48", STACKED, FACEUP)),
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -515,8 +482,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T36"))  // Shortcut space
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
         .put(LAST_TWO_MOVES, ImmutableList.of("2", ""))  
@@ -527,8 +494,8 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAKE_SHORTCUT),
         new Set("R2", getNewPiece("T48")),
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -545,8 +512,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T36"))  // Shortcut space
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
         .put(LAST_TWO_MOVES, ImmutableList.of("2", ""))  
@@ -557,8 +524,8 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAKE_SHORTCUT),  // This can be either taking or deciding not to take
                   // the shortcut, but since I didn't update any pieces then I didn't take it
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -575,7 +542,7 @@ public class AeroplaneChessLogicTest {
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
         .put("Y1", getNewPiece("F02"))  // In my way!
-        .put("Y2", getNewPiece("H00"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
         .put(LAST_TWO_MOVES, ImmutableList.of("2", ""))
@@ -587,8 +554,8 @@ public class AeroplaneChessLogicTest {
         new Set(ACTION, TAKE_SHORTCUT),
         new Set("R2", getNewPiece("T48")),
         new Set("Y1", getNewPiece("H01")),  // Send them on their merry way
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -610,7 +577,7 @@ public class AeroplaneChessLogicTest {
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
         .put("Y1", getNewPiece("F02"))  
-        .put("Y2", getNewPiece("H00"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         // Since we previously rolled a 6, we can set the turn back to ourselves after taking
         // this shortcut
@@ -633,8 +600,8 @@ public class AeroplaneChessLogicTest {
         new Set(ACTION, TAKE_SHORTCUT),
         new Set("R2", getNewPiece("T48")),
         new Set("Y1", getNewPiece("H01")),  // Bounce yellow piece back to hangar
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves)); 
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES)); 
     
     assertMoveOk(move(rId, state, operationsMove));
     assertHacker(move(rId, state, operationsPassTurn));
@@ -646,30 +613,31 @@ public class AeroplaneChessLogicTest {
    */
   @Test
   public void testStackThenJump() {
- // State: die, action, R0...R3, Y0...Y3, lastTwoRolls, lastTwoMoves 
+  // State: die, action, R0...R3, Y0...Y3, lastTwoRolls, lastTwoMoves 
     Map<String, Object> state = ImmutableMap.<String, Object>builder()
         .put(DIE, 3)  
         .put(ACTION, STACK)
         .put("R0", getNewPiece("T33")) 
         .put("R1", getNewPiece("H01"))
-        .put("R2", getNewPiece("T40"))  // Jump available after landing here
-        .put("R3", getNewPiece("T29"))
+        .put("R2", ImmutableList.of("T40", STACKED, FACEUP))  // Jump available after stacking here
+        .put("R3", ImmutableList.of("T40", STACKED, FACEUP))
         .put("Y0", getNewPiece("T13")) 
         .put("Y1", getNewPiece("T44"))  
-        .put("Y2", getNewPiece("H00"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
-        .put(LAST_TWO_MOVES, ImmutableList.of("2", ""))
+        .put(LAST_TWO_MOVES, ImmutableList.of("23", ""))
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
         new SetTurn(yId),  // Give up turn to other player since didn't roll 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, JUMP),
-        new Set("R2", getNewPiece("T44")),
+        new Set("R2", ImmutableList.of("T44", STACKED, FACEUP)),
+        new Set("R3", ImmutableList.of("T44", STACKED, FACEUP)),
         new Set("Y1", getNewPiece("H01")),  // Send them on their merry way
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -690,10 +658,10 @@ public class AeroplaneChessLogicTest {
         .put("R3", getNewPiece("T40"))
         .put("Y0", getNewPiece("T14"))  
         .put("Y1", getNewPiece("T39"))  
-        .put("Y2", getNewPiece("H00"))  
+        .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T13"))  
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves)
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -701,10 +669,10 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, MOVE),
         new Set("Y1", getNewPiece("T42")),  // Move Y1 from T39 --> T42
-        new Set("R3", getNewPiece("H01")),  // Should not be able to move this
+        new Set("R3", getNewPiece("H03")),  // Should not be able to move this
                                           // Even though he is in my path, I didn't land on him
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertHacker(move(yId, state, operations));
   }
@@ -721,10 +689,10 @@ public class AeroplaneChessLogicTest {
         .put("R3", getNewPiece("T42"))  // Piece Y1 is moved here, R3 is sent back to hangar
         .put("Y0", getNewPiece("T14"))  
         .put("Y1", getNewPiece("T39"))  
-        .put("Y2", getNewPiece("H00"))  
+        .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T13"))  
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves)
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -733,8 +701,8 @@ public class AeroplaneChessLogicTest {
         new Set(ACTION, MOVE),
         new Set("Y1", getNewPiece("T42")),  // Move Y1 from T39 --> T42
         new Set("R3", getNewPiece("H03")),  // Send them on their merry way
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertMoveOk(move(yId, state, operations));
   }
@@ -748,11 +716,11 @@ public class AeroplaneChessLogicTest {
         .put(ACTION, MOVE)
         .put("R0", getNewPiece("T14"))  
         .put("R1", getNewPiece("T40"))  // R1 was just moved here, jump is available  
-        .put("R2", getNewPiece("H00"))  
+        .put("R2", getNewPiece("H02"))  
         .put("R3", getNewPiece("T13"))  
         .put("Y0", getNewPiece("T12"))  
         .put("Y1", getNewPiece("H01"))
-        .put("Y2", getNewPiece("H01"))  
+        .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T44"))  // Piece R1 is moved here after jump, Y3 is sent back
         .put(LAST_TWO_ROLLS, ImmutableList.of(1, -1))  
         .put(LAST_TWO_MOVES, ImmutableList.of("1", ""))
@@ -764,8 +732,8 @@ public class AeroplaneChessLogicTest {
         new Set(ACTION, JUMP),
         new Set("R1", getNewPiece("T44")),  // Jump R1 from T40 --> T44 since T40 is red
         new Set("Y3", getNewPiece("H03")),  // Send them on their merry way
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -781,11 +749,11 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T49"))  // Shortcut space - B
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L00"))
-        .put("Y2", getNewPiece("H00"))
+        .put("Y1", getNewPiece("L01"))
+        .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
-        .put(LAST_TWO_ROLLS, emptyRolls)
-        .put(LAST_TWO_MOVES, emptyMoves)  
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)  
         .build();
 
     List<Operation> operationsGreen = ImmutableList.<Operation>of(
@@ -793,24 +761,24 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAKE_SHORTCUT),
         new Set("R0", getNewPiece("T35")),  // Take G's shortcut -- illegal!
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     List<Operation> operationYellow = ImmutableList.<Operation>of(
         new SetTurn(yId),  // Give up turn to other player since didn't roll 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAKE_SHORTCUT),
         new Set("R1", getNewPiece("T22")),  // Take G's shortcut -- illegal!
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     List<Operation> operationBlue = ImmutableList.<Operation>of(
         new SetTurn(yId),  // Give up turn to other player since didn't roll 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAKE_SHORTCUT),
         new Set("R2", getNewPiece("T09")),  // Take B's shortcut -- illegal!
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Clear for other player
-        new Set(LAST_TWO_MOVES, emptyMoves));  
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
     assertHacker(move(rId, state, operationsGreen));
     assertHacker(move(rId, state, operationYellow));
@@ -828,11 +796,11 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))  
-        .put("Y1", getNewPiece("L00"))  
-        .put("Y2", getNewPiece("H00"))  
+        .put("Y1", getNewPiece("L01"))  
+        .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T13")) 
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves)
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)
         .build();
 
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -840,8 +808,8 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),
         new Set(ACTION, MOVE),
         new Set("Y1", getNewPiece("T25")),  // { die: 5 } but moved 25 spaces
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertHacker(move(yId, state, operations));
   }
@@ -856,12 +824,12 @@ public class AeroplaneChessLogicTest {
         .put("R1", getNewPiece("T00"))
         .put("R2", getNewPiece("T29"))  
         .put("R3", getNewPiece("T40"))
-        .put("Y0", getNewPiece("L02"))  
-        .put("Y1", getNewPiece("L00"))  
+        .put("Y0", getNewPiece("L00"))  
+        .put("Y1", getNewPiece("L01"))  
         .put("Y2", getNewPiece("T29"))  
         .put("Y3", getNewPiece("T14")) 
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves)
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)
         .build();
 
     List<Operation> operationsGreen = ImmutableList.<Operation>of(
@@ -869,24 +837,24 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),
         new Set(ACTION, MOVE),
         new Set("R1", getNewPiece("F01")),  // T00 to F01 is a move to G's final stretch
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
         
     List<Operation> operationsBlue = ImmutableList.<Operation>of(
         new SetTurn(yId),  // Give up turn to other player since didn't roll 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),
         new Set(ACTION, MOVE),
         new Set("R2", getNewPiece("F04")),  // T29 to F04 is a move to B's final stretch
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
         
     List<Operation> operationsYellow = ImmutableList.<Operation>of(
         new SetTurn(yId),  // Give up turn to other player since didn't roll 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),
         new Set(ACTION, MOVE),
         new Set("R3", getNewPiece("F02")),  // T40 to F02 is a move to Y's final stretch
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertHacker(move(rId, state, operationsGreen));
     assertHacker(move(rId, state, operationsBlue));
@@ -901,14 +869,14 @@ public class AeroplaneChessLogicTest {
         .put(ACTION, MOVE)
         .put("R0", getNewPiece("T13"))  
         .put("R1", getNewPiece("T00"))
-        .put("R2", getNewPiece("H03"))  
+        .put("R2", getNewPiece("H02"))  
         .put("R3", getNewPiece("T29"))
-        .put("Y0", getNewPiece("L02"))  
-        .put("Y1", getNewPiece("L00"))  
+        .put("Y0", getNewPiece("L00"))  
+        .put("Y1", getNewPiece("L01"))  
         .put("Y2", getNewPiece("T29"))  
         .put("Y3", getNewPiece("T14")) 
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves)
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)
         .build();
         
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -916,8 +884,8 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),
         new Set(ACTION, MOVE),
         new Set("R0", getNewPiece("F01")),  // T13 to F01 is a move to R's final stretch
-        new Set(LAST_TWO_ROLLS, emptyRolls),
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -929,11 +897,11 @@ public class AeroplaneChessLogicTest {
         .put(DIE, 6)  // This (3rd) roll was a 6
         .put(ACTION, MOVE)
         .put("R0", getNewPiece("T13"))  
-        .put("R1", getNewPiece("L00"))
+        .put("R1", getNewPiece("L01"))
         .put("R2", ImmutableList.of("T22", STACKED, FACEUP))  
         .put("R3", ImmutableList.of("T22", STACKED, FACEUP))
-        .put("Y0", getNewPiece("L02"))  
-        .put("Y1", getNewPiece("L00"))  
+        .put("Y0", getNewPiece("L00"))  
+        .put("Y1", getNewPiece("L01"))  
         .put("Y2", getNewPiece("T29"))  
         .put("Y3", getNewPiece("T14")) 
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, 6))  // And previous two rolls were 6's
@@ -948,8 +916,8 @@ public class AeroplaneChessLogicTest {
         new Set("R1", getNewPiece("H01")),  // Send all pieces affected by last 2 rolls back
         new Set("R2", getNewPiece("H02")),  // to the hangar
         new Set("R3", getNewPiece("H03")),  
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Switching turn, clear these
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Switching turn, clear these
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
     
     assertMoveOk(move(rId, state, operations));
   }
@@ -964,12 +932,12 @@ public class AeroplaneChessLogicTest {
         .put("R1", ImmutableList.of("H01", UNSTACKED, FACEDOWN))
         .put("R2", ImmutableList.of("H02", UNSTACKED, FACEDOWN))  
         .put("R3", ImmutableList.of("H03", UNSTACKED, FACEDOWN))
-        .put("Y0", getNewPiece("L02"))  
+        .put("Y0", getNewPiece("L00"))  
         .put("Y1", getNewPiece("T40"))  
-        .put("Y2", ImmutableList.of("H01", UNSTACKED, FACEDOWN))
-        .put("Y3", ImmutableList.of("H02", UNSTACKED, FACEDOWN))  
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves) 
+        .put("Y2", ImmutableList.of("H02", UNSTACKED, FACEDOWN))
+        .put("Y3", ImmutableList.of("H03", UNSTACKED, FACEDOWN))  
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES) 
         .build();
         
     List<Operation> operations = ImmutableList.<Operation>of(
@@ -998,11 +966,11 @@ public class AeroplaneChessLogicTest {
         .put("R2", ImmutableList.of("H02", UNSTACKED, FACEDOWN))  
         .put("R3", ImmutableList.of("H03", UNSTACKED, FACEDOWN))
         .put("Y0", getNewPiece("F02"))  
-        .put("Y1", ImmutableList.of("H03", UNSTACKED, FACEDOWN)) 
-        .put("Y2", ImmutableList.of("H01", UNSTACKED, FACEDOWN))
-        .put("Y3", ImmutableList.of("H02", UNSTACKED, FACEDOWN))  
-        .put(LAST_TWO_ROLLS, emptyRolls)  
-        .put(LAST_TWO_MOVES, emptyMoves)  
+        .put("Y1", ImmutableList.of("H01", UNSTACKED, FACEDOWN)) 
+        .put("Y2", ImmutableList.of("H02", UNSTACKED, FACEDOWN))
+        .put("Y3", ImmutableList.of("H03", UNSTACKED, FACEDOWN))  
+        .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
+        .put(LAST_TWO_MOVES, EMPTY_MOVES)  
         .build();
         
     List<Operation> operationsIllegalWin = ImmutableList.<Operation>of(
@@ -1018,8 +986,8 @@ public class AeroplaneChessLogicTest {
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO), // Roll die for other player
         new Set(ACTION, MOVE),
         new Set("Y0", getNewPiece("T39")), // Backtracking 5 spaces F02 --> T39
-        new Set(LAST_TWO_ROLLS, emptyRolls),  // Switching turn, clear these
-        new Set(LAST_TWO_MOVES, emptyMoves));
+        new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Switching turn, clear these
+        new Set(LAST_TWO_MOVES, EMPTY_MOVES));
 
     assertHacker(move(yId, state, operationsIllegalWin));
     assertMoveOk(move(yId, state, operationsBacktrack));
