@@ -49,10 +49,8 @@ public class AeroplaneChessLogic {
    * The shortcut spaces are: Y: T10, G: T23, R: T36, B: T49
    */
   boolean isShortcutAvailable(Zone zone, int space, Color turn) {
-    int start = 10, offset = 13;
-    return (zone == Zone.TRACK)
-        && (Math.abs(space - start) % offset == 0)
-        && (turn == getTrackSpaceColor(space));
+    int[] shortcuts = {36, 49, 10, 23};
+    return (zone == Zone.TRACK) && space == shortcuts[turn.ordinal()];
   }
   
   /**
@@ -60,10 +58,8 @@ public class AeroplaneChessLogic {
    * The shortcut end spaces are: B: T09, Y: T22, G: T35, R: T48
    */
   private boolean isShortcutEnd(Zone zone, int space, Color turn) {
-    int start = 48, offset = 13;
-    return (zone == Zone.TRACK) 
-        && (Math.abs(space - start) % offset == 0) 
-        && (turn == getTrackSpaceColor(space));
+    int[] ends = {48, 9, 22, 35};
+    return (zone == Zone.TRACK) && space == ends[turn.ordinal()];
   }
   
   /** 
@@ -74,13 +70,16 @@ public class AeroplaneChessLogic {
    * cannot take a shortcut followed by a jump.)
    * A jump is also not available at the shortcut or Final Stretch starts (otherwise you would miss 
    * the shortcut or Final Stretch entirely!)
+   * Also, you can't jump multiple times (so if the last action on your turn was JUMP then 
+   * you cannot make another jump).
    */
-  boolean isJumpAvailable(Zone zone, int space, Color turn) {
+  boolean isJumpAvailable(Action action, Zone zone, int space, Color turn) {
     return zone == Zone.TRACK 
+        && action != Action.JUMP
         && (turn == getTrackSpaceColor(space))
         && !isShortcutEnd(zone, space, turn)
         && !isShortcutAvailable(zone, space, turn)
-        && (getStart(turn, FINAL_STRETCH_START) != space);
+        && (getStart(turn, Zone.FINAL_STRETCH) != space);
   }
   
   /** 
@@ -98,14 +97,14 @@ public class AeroplaneChessLogic {
   
   /**
    * Each player's final stretch/launch starts at a different track space. 
-   * For now we only have 2 players, R and Y:
-   * Final stretch start: R = T16, Y = T42.
-   * Launch start: R = T19, Y = Y = T45.
+   * Final stretch start: R = T16, Y = T42, B = T29, G = T03
+   * Launch start: R = T18, Y = T44, G = T05, B = T31
    */
-  int getStart(Color turn, int start) {
-    int offset = 13;
-    int turnInt = turn.ordinal();
-    return (start + (offset * turnInt)) % TOTAL_SPACES;
+  int getStart(Color turn, Zone zone) {
+    int[] finalStart = {16, 29, 42, 3};
+    int[] launchStart = {18, 31, 44, 5};
+    
+    return zone == Zone.FINAL_STRETCH ? finalStart[turn.ordinal()] : launchStart[turn.ordinal()];
   }
   
   /**
@@ -200,8 +199,7 @@ public class AeroplaneChessLogic {
     for (Piece piece : opponentPieces) {
       int pieceId = piece.getPieceId();
       operations.add(
-          new Set(turn.getOppositeColor().name() + pieceId,
-              getNewPiece(H + String.format("%02d",  pieceId))));
+          new Set(turn.getOppositeColor().name() + pieceId, getNewPiece(H + format(pieceId))));
     }
     
     return operations;
@@ -281,6 +279,14 @@ public class AeroplaneChessLogic {
   }
   
   /**
+   * Takes an integer and returns a string padded to 2 digits (substitute for String.format()
+   * which is not supported by GWT).  Not using GWT libraries (this way testing will work).
+   */
+  static String format(int number) {
+    return number > 9 ? "" + number : "0" + number;
+  }
+  
+  /**
    * Returns a list of operations for when ACTION == TAXI.
    */
   List<Operation> getOperationsTaxi(AeroplaneChessState state, List<Piece> playerMovedPieces, 
@@ -301,6 +307,10 @@ public class AeroplaneChessLogic {
     Piece statePiece = getStatePiece(state, turn, pieceId); 
     check(statePiece.getZone() == Zone.HANGAR, 
         "Illegal to taxi piece not in Hangar.");
+    
+    // Check that the piece was moved to the correct Launch spot
+    check(movedPiece.getZone() == Zone.LAUNCH && movedPiece.getSpace() == 0,
+        "Must taxi piece to Launch zone.");
     
     // Check that the piece is still faceup
     check(!statePiece.isFaceDown(), 
@@ -359,7 +369,7 @@ public class AeroplaneChessLogic {
       for (int i = 0; i < PIECES_PER_PLAYER; i++) {
         if (lastTwoMoves.get(0).contains(Integer.toString(i)) 
               || lastTwoMoves.get(1).contains(Integer.toString(i))) {
-          operations.add(new Set(turn.name() + i, getNewPiece(H + String.format("%02d", i))));
+          operations.add(new Set(turn.name() + i, getNewPiece(H + format(i))));
         }
       }
       
@@ -412,7 +422,7 @@ public class AeroplaneChessLogic {
     /* If you rolled an inexact roll, then you must backtrack. This can only happen if you were
      * in the final stretch.
      */
-    if (stateZone == Zone.FINAL_STRETCH && originalSpace + die != WIN_FINAL_SPACE) {
+    if (stateZone == Zone.FINAL_STRETCH && originalSpace + die > WIN_FINAL_SPACE) {
       List<Operation> operations = Lists.newArrayList(
           new SetTurn(oppositeId), 
           new SetRandomInteger(DIE, DIE_FROM, DIE_TO),
@@ -420,18 +430,18 @@ public class AeroplaneChessLogic {
       // Backtrack pieces
       for (Piece piece : playerMovedPieces) {
         if (originalSpace - die < 0) {  // Have to backtrack to Track zone
-          int offset = die - originalSpace;
-          int finalStretchStart = getStart(turn, FINAL_STRETCH_START);
+          int offset = die - originalSpace - 1;
+          int finalStretchStart = getStart(turn, Zone.FINAL_STRETCH);
           operations.add(new Set(
               turn.name() + piece.getPieceId(), 
               backtrackGameApiPiece(
                   piece, 
-                  T + String.format("%02d", (finalStretchStart - offset)))));
+                  T + format(finalStretchStart - offset))));
         }
         else {  // Can stay in Final Stretch
           operations.add(new Set(
               turn.name() + piece.getPieceId(), 
-              backtrackGameApiPiece(piece, F + String.format("%02d", (originalSpace - die)))));
+              backtrackGameApiPiece(piece, F + format(originalSpace - die))));
         }
       }
       
@@ -456,19 +466,19 @@ public class AeroplaneChessLogic {
             "Illegal move to final stretch from non-track space.");
       }
       else {  // Track to Final Stretch
-        int finalStretchStart = getStart(turn, FINAL_STRETCH_START);
+        int finalStretchStart = getStart(turn, Zone.FINAL_STRETCH);
         check(finalStretchStart == (((originalSpace + die) % TOTAL_SPACES) - movedSpace - 1),
             "Illegal number of spaces moved.");
       }
     }
     else if (movedZone == Zone.TRACK) {  // Checking moves to TRACK
       if (stateZone == Zone.LAUNCH) {
-        int launchStart = getStart(turn, LAUNCH_START);
+        int launchStart = getStart(turn, Zone.LAUNCH);
         check(launchStart + die == movedSpace, 
             "Moved incorrect spaces from launch.");
       }
       else if (stateZone == Zone.TRACK) {
-        check(Math.abs(movedSpace - originalSpace) % TOTAL_SPACES == die, 
+        check((originalSpace + die) % TOTAL_SPACES == movedSpace,
             "Moved incorrect amount of spaces.", movedSpace, originalSpace, die);
       }
       else {  // You can only move to the TRACK from TRACK or LAUNCH
@@ -495,10 +505,10 @@ public class AeroplaneChessLogic {
          * Otherwise if the roll is inexact then player must backtrack that many steps.
          */
         // You must start exactly on the start of the final stretch, or in it
-        int finalStretchStart = getStart(turn, FINAL_STRETCH_START);
+        int finalStretchStart = getStart(turn, Zone.FINAL_STRETCH);
         if (originalSpace == finalStretchStart || stateZone == Zone.FINAL_STRETCH) {
-          check((originalSpace == finalStretchStart && die == 6)
-              || stateZone == Zone.FINAL_STRETCH && (originalSpace + die == WIN_FINAL_SPACE), 
+          check((originalSpace == finalStretchStart && die == 6 && stateZone == Zone.TRACK)
+              || (stateZone == Zone.FINAL_STRETCH && (originalSpace + die == WIN_FINAL_SPACE)), 
             "Can't win on inexact spaces.");
           
           List<Operation> operations = Lists.newArrayList(
@@ -532,7 +542,7 @@ public class AeroplaneChessLogic {
      * Set turn to the other player and roll for them.
      */
     boolean stackOrJumpOrShortcutAvailable = isShortcutAvailable(movedZone, movedSpace, turn)
-        || isJumpAvailable(movedZone, movedSpace, turn)
+        || isJumpAvailable(state.getAction(), movedZone, movedSpace, turn)
         || isStackAvailable(movedZone, movedSpace, state.getPieces(turn));
         
     if (die == 6 || stackOrJumpOrShortcutAvailable) {
@@ -696,18 +706,22 @@ public class AeroplaneChessLogic {
       check(false, "No pieces moved in last move.");
     }
     
+    // Check that the turn hasn't just switched (ie., a jump cannot be the first thing you do)
+    check(!state.getLastTwoRolls().equals(EMPTY_ROLLS), "Can't jump first thing!");
+    
     // Check that the pieces are all still faceup
     for (Piece piece : playerMovedPieces) {
       check(!piece.isFaceDown(), "Illegal to set to facedown on the track.");
     }
     
     /* Check that the pieces moved were previously on a valid jump space (if one is,
-     * then they all are, since the stacked test was passed)
+     * then they all are, since the stacked test was passed), and also that the pieces did
+     * not previously jump.
      */
     Piece movedPiece = playerMovedPieces.get(0);
     Piece lastPiece = getStatePiece(state, turn, movedPiece.getPieceId());
     int lastSpace = lastPiece.getSpace();
-    check(isJumpAvailable(lastPiece.getZone(), lastSpace, turn),
+    check(isJumpAvailable(state.getAction(), lastPiece.getZone(), lastSpace, turn),
         "Jump not available on that space.");
     
     // Check that pieces are being moved to the correct position
@@ -718,7 +732,7 @@ public class AeroplaneChessLogic {
     List<Piece> stateOpponentPieces = state.getPieces(turn.getOppositeColor());
     List<Piece> opponentPiecesToMove = getOpponentPiecesOnSpace(
         stateOpponentPieces, 
-        T + String.format("%02d", ((lastPiece.getSpace() + JUMP_AMOUNT) % TOTAL_SPACES)));
+        T + format((lastPiece.getSpace() + JUMP_AMOUNT) % TOTAL_SPACES));
     
     /* 
      * On a jump move, if you rolled a (first or second) 6, or if a stack/shortcut is available 
@@ -745,9 +759,9 @@ public class AeroplaneChessLogic {
       expectedOperations.addAll(getOperationsMovePlayerPieces(turn, playerMovedPieces));
       // Add any opponent piece movements (if they were in player's way - send to Hangar)
       expectedOperations.addAll(getOperationsOpponentToHangar(turn, opponentPiecesToMove));
-      expectedOperations.add(new Set(LAST_TWO_ROLLS, getNewLastTwoRolls(state, die)));
       // A jump move always follows an actual move (or move --> stack, etc.),
-      // so you don't have to change the lastTwoMoves since the pieces moved are the same.
+      // so you don't have to change the lastTwoMoves/Rolls since the pieces moved are the same.
+      expectedOperations.add(new Set(LAST_TWO_ROLLS, state.getLastTwoRolls()));
       expectedOperations.add(new Set(LAST_TWO_MOVES, state.getLastTwoMoves()));
     }
     else {
@@ -833,7 +847,7 @@ public class AeroplaneChessLogic {
     List<Piece> stateOpponentPieces = state.getPieces(turn.getOppositeColor());
     List<Piece> opponentPiecesToMove = getOpponentPiecesOnSpace(
         stateOpponentPieces, 
-        T + String.format("%02d", ((lastPiece.getSpace() + SHORTCUT_AMOUNT) % TOTAL_SPACES)));
+        T + format((lastPiece.getSpace() + SHORTCUT_AMOUNT) % TOTAL_SPACES));
     // Add opponent's piece(s) that were in the way of the shortcut (in the final stretch)
     opponentPiecesToMove.addAll(getOpponentPiecesOnSpace(
         stateOpponentPieces, 
@@ -956,7 +970,7 @@ public class AeroplaneChessLogic {
     
     checkArgument((space >= 0)
         && ((region.equals(H) && space < PIECES_PER_PLAYER) 
-            || (region.equals(L) && space < PIECES_PER_PLAYER)) 
+            || (region.equals(L) && space == 0)) 
             || (region.equals(T) && space < TOTAL_SPACES) 
             || (region.equals(F) && space < TOTAL_FINAL_SPACES));
     
@@ -1056,7 +1070,7 @@ public class AeroplaneChessLogic {
   AeroplaneChessState gameApiStateToAeroplaneChessState(Map<String, Object> gameApiState,
       Color turn, List<Integer> playerIds) {
     
-    int die = (int) gameApiState.get(DIE);
+    int die = (Integer) gameApiState.get(DIE);
     Action action = Action.fromLowerString((String) gameApiState.get(ACTION));
     
     List<Piece> rPieces = Lists.newArrayList();

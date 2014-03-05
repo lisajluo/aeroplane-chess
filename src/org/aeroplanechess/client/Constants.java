@@ -31,13 +31,13 @@ public final class Constants {
   /* Board and player numerics */
   static final int SHORTCUT_AMOUNT = 12;
   static final int JUMP_AMOUNT = 4;
-  static final int TOTAL_SPACES = 52;
-  static final int TOTAL_FINAL_SPACES = 6;
+  public static final int TOTAL_SPACES = 52;
+  public static final int TOTAL_FINAL_SPACES = 6;
   static final int WIN_FINAL_SPACE = 5;
-  static final int PIECES_PER_PLAYER = 4;
-  // Start point for calculating where the final stretch and launch starts are for each player
-  static final int FINAL_STRETCH_START = 16;
-  static final int LAUNCH_START = 19;
+  public static final int PIECES_PER_PLAYER = 4;
+  // If the green player is at a space >= 50 (or <= 3) then he can move into his final stretch.
+  // Not currently in use for two-player.
+  static final int GREEN_MOVE_TO_FINAL = 50;
   
   
   /* Regions on the board */
@@ -70,13 +70,13 @@ public final class Constants {
   static final String STACKED = "stacked";
   static final String UNSTACKED = "unstacked";
   
-  /* Actions the player can take.  One of: initialize, taxi, move, takeShortcut, stack, jump */
+  /* Actions the player can take.  One of: initialize, taxi, move, take_shortcut, stack, jump */
   static final String ACTION = "action";
   static final String INITIALIZE = "initialize";
   static final String TAXI = "taxi";
   static final String MOVE = "move";
   static final String STACK = "stack";
-  static final String TAKE_SHORTCUT = "takeShortcut";
+  static final String TAKE_SHORTCUT = "take_shortcut";
   static final String JUMP = "jump";
   
   /* Information needed to send pieces moved on last two moves to hangar (if 3 6's are rolled) */

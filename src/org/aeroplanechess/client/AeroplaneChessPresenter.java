@@ -34,12 +34,13 @@ public class AeroplaneChessPresenter {
    * STACK_AVAILABLE: player just moved/jumped/took shortcut and can now stack/unstack
    * SHORTCUT_AVAILABLE: player just moved/jumped/stacked and can now take shortcut (or not)
    * JUMP_AVAILABLE: player just moved/stacked and now jump will automatically occur
+   * OTHER_TURN: it's the turn of the other player, so nothing is available
    */
-  enum AeroplaneChessMessage {
-    ROLL_AVAILABLE, STACK_AVAILABLE, SHORTCUT_AVAILABLE, JUMP_AVAILABLE
+  public enum AeroplaneChessMessage {
+    ROLL_AVAILABLE, STACK_AVAILABLE, SHORTCUT_AVAILABLE, JUMP_AVAILABLE, OTHER_TURN
   }
 
-  interface View {
+  public interface View {
     /**
      * Sets the presenter. The viewer will call certain methods on the presenter:
      * When the player "rolls" the die (it's been rolled but view needs to show it) 
@@ -48,6 +49,8 @@ public class AeroplaneChessPresenter {
      * - {@link #piecesSelected}
      * - {@link #stackSelected}
      * - {@link #shortcutSelected}
+     * When the player has to jump (the move is automatic but View can show to the player):
+     * - {@link #showJump}
      * The presenter calls certain methods on the view:
      * When the presenter needs to pass which pieces are available to move/taxi. 
      * - {@link #choosePieces}
@@ -66,7 +69,8 @@ public class AeroplaneChessPresenter {
      *    available pieces (that can be moved or taxi'd).
      * 2) (After the move) If a stack/shortcut is available on the space where the player landed,
      *    the view will show a button presenting the choice to the player. Otherwise, if a jump
-     *    is available, the presenter automates the move and sends an updated state to the view
+     *    is available, the presenter tells the view (which can show to the player) and automates
+     *    the move.
      */
     void setPresenter(AeroplaneChessPresenter aeroplaneChessPresenter);
 
@@ -86,8 +90,10 @@ public class AeroplaneChessPresenter {
      * Asks the player to choose which pieces to taxi or move. The player will select using
      * {@link #piecesSelected}.  Implicit in the piece selection is the possible action 
      * (since you can only taxi in the Hangar/move in track).
+     * @param backToHangar True if player must send pieces back to the hangar (third 6 roll).
+     * @param possiblePieces An empty list if player cannot make a taxi/move.
      */
-    void choosePieces(List<Piece> possiblePieces);
+    void choosePieces(List<Piece> possiblePieces, boolean backToHangar);
   }
   
   private final AeroplaneChessLogic aeroplaneChessLogic = new AeroplaneChessLogic();
@@ -141,15 +147,12 @@ public class AeroplaneChessPresenter {
         turn, 
         playerIds);
     
-    /* Save the message to see what methods to call on the view later (ie., choosePieces) */
-    AeroplaneChessMessage message = getAeroplaneChessMessage();
-
     if (updateUI.isViewer()) {  // The viewer can see the board and die roll but can't interact.
       view.setViewerState(
           aeroplaneChessState.getPieces(Color.R), 
           aeroplaneChessState.getPieces(Color.Y), 
           aeroplaneChessState.getDie(), 
-          message);
+          getAeroplaneChessMessage());
       return;
     }
     
@@ -167,18 +170,18 @@ public class AeroplaneChessPresenter {
         aeroplaneChessState.getPieces(myC), 
         aeroplaneChessState.getPieces(opponentColor), 
         aeroplaneChessState.getDie(), 
-        message);
-    
-    if (isMyTurn()) {
-      if (message == AeroplaneChessMessage.JUMP_AVAILABLE) {
-        // The presenter calls this automatically (no player interaction involved)
-        makeJumpMove();
-        return;
-      }
-    }
+        getAeroplaneChessMessage());
   }
   
+  /**
+   * Returns a message that is sent to the View specifying how the View should interact with the 
+   * player; see AeroplaneChessMessage
+   * @return
+   */
   private AeroplaneChessMessage getAeroplaneChessMessage() {
+    if (!isMyTurn()) {
+      return AeroplaneChessMessage.OTHER_TURN;
+    }
     /*
      * Turn has just switched, so need to display the die roll for the player. This will allow
      * for some interaction for "rolling" (ie., click on a die).
@@ -208,8 +211,9 @@ public class AeroplaneChessPresenter {
     int movedSpace = movedPiece.getSpace();
     
     boolean stackAvailable = aeroplaneChessLogic.isStackAvailable(
-        movedZone, movedSpace, piecesNotMovedLast);
-    boolean jumpAvailable = aeroplaneChessLogic.isJumpAvailable(movedZone, movedSpace, turn);
+        movedZone, movedSpace, piecesNotMovedLast); 
+    boolean jumpAvailable = aeroplaneChessLogic.isJumpAvailable(
+        aeroplaneChessState.getAction(), movedZone, movedSpace, turn);
     boolean shortcutAvailable = aeroplaneChessLogic.isShortcutAvailable(
         movedZone, movedSpace, turn);
     /*
@@ -257,15 +261,17 @@ public class AeroplaneChessPresenter {
     int die = aeroplaneChessState.getDie();
     
     for (Piece piece : myPieces) {
-      Zone location = piece.getZone();
-      
-      if (location == Zone.HANGAR) {
-        if (die % 2 == 0 && !piece.isFaceDown()) { // Pieces that can be taxi'd
-          possiblePieces.add(piece);
+      if (!piece.isFaceDown()) {
+        Zone location = piece.getZone();
+        
+        if (location == Zone.HANGAR) {
+          if (die % 2 == 0) { // Pieces that can be taxi'd
+            possiblePieces.add(piece);
+          }
         }
-      }
-      else {  // Track, Final Stretch, or Launch
-        possiblePieces.add(piece);  // Pieces that can be moved
+        else {  // Track, Final Stretch, or Launch
+          possiblePieces.add(piece);  // Pieces that can be moved
+        }
       }
     }
 
@@ -301,55 +307,28 @@ public class AeroplaneChessPresenter {
     return piecesToMove;
   }
   
-
   /**
-   * If a player lands on a jump space, ie., a space of the player's color, and no stack is 
-   * available, then the piece(s) automatically jump 4 spaces.  (There are exceptions, such as
-   * if the space begins the Final Stretch, or if it ends a shortcut.) 
+   * Returns true if the space is counter-clockwise of the new space (within six spaces, since
+   * that's the max number of spaces we can move on a die roll). This is used to verify moving 
+   * into the final stretch.
    */
-  private void makeJumpMove() {
-    List<Piece> myPieces = Lists.newArrayList();
-    String piecesMovedLast = aeroplaneChessState.getLastTwoMoves().get(0);
-    Color myC = myColor.get();
-    
-    for (int i = 0; i < PIECES_PER_PLAYER; i++) {
-      if (piecesMovedLast.contains(Integer.toString(i))) {
-        Piece piece = aeroplaneChessState.getPieces(myC).get(i);
-        myPieces.add(new Piece(
-            Zone.TRACK, // Jump spaces are only on the track
-            i, 
-            piece.getSpace() + JUMP_AMOUNT, // Jumps are 4 spaces
-            myC, 
-            piece.isStacked(), 
-            piece.isFaceDown())); 
-      }
-    }
-    
-    /*
-     *  Get any opponent pieces that were on the space the player will land on and send them
-     *  to the Hangar. Jump spaces are always on the track.
-     */
-    int landSpace = myPieces.get(0).getSpace();
-    List<Piece> opponentPiecesToMove = getOpponentPiecesToMove(landSpace, Zone.TRACK);
-    
-    container.sendMakeMove(
-        aeroplaneChessLogic.getOperationsJump(
-            aeroplaneChessState, 
-            myPieces,
-            opponentPiecesToMove,
-            getPlayerId()));
+  private boolean isCounterClockwiseOf(int oldSpace, int newSpace) {
+    return oldSpace < newSpace || 
+        oldSpace >= GREEN_MOVE_TO_FINAL 
+          && newSpace == aeroplaneChessLogic.getStart(Color.G, Zone.FINAL_STRETCH);
   }
   
   /**
    * Taxis the piece out of the Hangar into the launch.
+   * @param oldPiece The piece before movement
    */
-  private void makeTaxiMove(List<Piece> oldPieces) {
-    // There will only be one piece selected to taxi (taken care of by UI)
-    int pieceId = oldPieces.get(0).getPieceId();
+  private void makeTaxiMove(Piece oldPiece) {
+    // There will only be one piece selected to taxi
+    int pieceId = oldPiece.getPieceId();
     Piece newPiece = new Piece(
         Zone.LAUNCH,  // A taxi move always moves to Launch
         pieceId,  // Same piece id
-        pieceId,  // Location within Launch is same as piece id
+        0,  // Location within Launch is the same for all pieces
         myColor.get(),
         false,  // Pieces in launch are never stacked
         false);  // Pieces in Launch are never facedown
@@ -362,9 +341,13 @@ public class AeroplaneChessPresenter {
             getPlayerId()));
   }
   
-  private void makeMoveMove(List<Piece> oldPieces) {
+  /**
+   * Move a piece to the track or final stretch.  The View can send just one piece, and the 
+   * Presenter will get all the stacked pieces (if that piece was stacked) to send the move.
+   * @param oldPiece The piece before movement
+   */
+  private void makeMoveMove(Piece oldPiece) {
     // All pieces selected were in the same location (taken care of by UI)
-    Piece oldPiece = oldPieces.get(0);
     Zone oldZone = oldPiece.getZone();
     int oldSpace = oldPiece.getSpace();
     
@@ -373,29 +356,47 @@ public class AeroplaneChessPresenter {
     int newSpace;
     boolean newIsFaceDown = false;
     int die = aeroplaneChessState.getDie();
-    int finalStretchStart = aeroplaneChessLogic.getStart(myC, FINAL_STRETCH_START);
+    int finalStretchStart = aeroplaneChessLogic.getStart(myC, Zone.FINAL_STRETCH);
 
     if ((oldZone == Zone.FINAL_STRETCH)  // A move into the Final Stretch or Hangar (if exact)
-        || (oldZone == Zone.TRACK && oldSpace == finalStretchStart)) {
+        || (oldZone == Zone.TRACK 
+            && isCounterClockwiseOf(oldSpace, finalStretchStart) 
+            && (oldSpace + die) % TOTAL_SPACES > finalStretchStart)
+         || (oldZone == Zone.TRACK && oldSpace == finalStretchStart)) {
       if ((oldZone == Zone.FINAL_STRETCH && oldSpace + die == WIN_FINAL_SPACE) 
-          || (oldZone == Zone.TRACK && die == 6)) {  // Move into Hangar (exact roll)
+          || (oldZone == Zone.TRACK && die == 6 && oldSpace == finalStretchStart)) {  
+        // Move into Hangar (exact roll)
         newZone = Zone.HANGAR;
         newSpace = -1;  // Flag to move into home space in Hangar (ie., R1 goes to H01..)
         newIsFaceDown = true;
       }
-      else if (oldZone == Zone.TRACK || oldSpace - die < 0) {
+      else if ((oldZone == Zone.TRACK && oldSpace == finalStretchStart && die != 6) || 
+          (oldZone == Zone.FINAL_STRETCH && oldSpace + die > WIN_FINAL_SPACE
+            && oldSpace - die < 0)) {
         // Backtrack pieces to track zone
         newZone = Zone.TRACK;
-        newSpace = finalStretchStart - (die - oldSpace);
+        newSpace = finalStretchStart - (die - oldSpace) + 1;
+      }
+      else if (oldZone == Zone.TRACK) {
+        // No need to backtrack -- end up in final stretch
+        newZone = Zone.FINAL_STRETCH;
+        newSpace = oldSpace + die - finalStretchStart - 1;
       }
       else {
-        // Backtrack pieces to part of final stretch
         newZone = Zone.FINAL_STRETCH;
-        newSpace = oldSpace - die;
+        if (oldSpace + die > WIN_FINAL_SPACE) {
+          // Backtrack pieces to part of final stretch
+          newSpace = oldSpace - die;
+        }
+        else {
+          // Move was within final stretch
+          newSpace = oldSpace + die;
+        }
+        
       }
     }
     else if (oldZone == Zone.LAUNCH) {  // A move into the track from the Launch
-      int launchStart = aeroplaneChessLogic.getStart(myC,  LAUNCH_START);
+      int launchStart = aeroplaneChessLogic.getStart(myC, Zone.LAUNCH);
       newZone = Zone.TRACK;
       newSpace = launchStart + die;
     }
@@ -403,7 +404,20 @@ public class AeroplaneChessPresenter {
       newZone = Zone.TRACK;
       newSpace = (oldSpace + die) % TOTAL_SPACES;
     }
+    
+    // Get pieces as they were on the board
+    List<Piece> oldPieces = Lists.newArrayList(oldPiece);
+    List<Piece> allMyPieces = aeroplaneChessState.getPieces(myC);
+    
+    if (oldPiece.isStacked()) { // Add other stacked pieces if necessary
+      for (Piece piece : allMyPieces) {
+        if (piece.getZone() == oldZone && piece.getSpace() == oldSpace && !piece.equals(oldPiece)) {
+          oldPieces.add(piece);
+        }
+      }
+    }
       
+    // Create pieces as they will be after the move
     List<Piece> newPieces = Lists.newArrayList();
     for (Piece piece : oldPieces) {
       int pieceId = oldPiece.getPieceId(); 
@@ -487,35 +501,43 @@ public class AeroplaneChessPresenter {
    * with that die roll. The view can only call this method if the presenter passed 
    * AeroplaneChessMessage.ROLL_AVAILABLE in {@link View#setPlayerState}.
    */
-  void dieRolled() {
+  public void dieRolled() {
     check(isMyTurn());
-    if (aeroplaneChessLogic.rolledThreeSixes(aeroplaneChessState)) {  
+    if (aeroplaneChessLogic.rolledThreeSixes(aeroplaneChessState)) {
       // Must send pieces back to the Hangar if a third 6 was rolled
-      sendBackToHangar();
-      return;
+      view.choosePieces(EMPTY_PIECES, true);
     }
-    
-    List<Piece> possiblePieces = getPossiblePieces();
-    if (!possiblePieces.isEmpty()) {
-      view.choosePieces(getPossiblePieces());
-    }
-    else {  // Pass the turn to the other player if no moves are available
-      passTurn();
+    else {
+      view.choosePieces(getPossiblePieces(), false);
     }
   }
   
   /**
-   * Selects pieces to move on the current turn.  Although there may be more than one piece,
-   * they are all selected on one "click" (since you can only move multiple pieces if they are
-   * stacked). The view can only call this method if the presenter called {@link View#choosePieces}.
+   * Selects pieces to move on the current turn.  The view will select only one piece on the "click"
+   * and the Presenter will look to see if it is stacked, and move all stacked pieces at once
+   * if it is.  Thus the view is always sending just one piece.  The view can only call this method 
+   * if the presenter called {@link View#choosePieces}.  The view can also send no pieces (this
+   * is just to tell the presenter to make an "empty" move, such as back to the hangar or passing
+   * the turn if no moves are possible).
    */
-  void piecesSelected(List<Piece> pieces) {
-    check(isMyTurn() && getPossiblePieces().containsAll(pieces));
-    if (pieces.get(0).getZone() == Zone.HANGAR) {  // Player chose to taxi pieces
-      makeTaxiMove(pieces);
+  public void piecesSelected(Optional<Piece> piece) {
+    check(isMyTurn());
+    List<Piece> possiblePieces = getPossiblePieces();
+    if (aeroplaneChessLogic.rolledThreeSixes(aeroplaneChessState)) {
+      sendBackToHangar();
     }
-    else {  // Player chose to move pieces on the track 
-      makeMoveMove(pieces);
+    else if (possiblePieces.isEmpty()) {
+      passTurn();
+    }
+    else {
+      check(piece.isPresent() && getPossiblePieces().contains(piece.get()));
+      Piece pieceToMove = piece.get();
+      if (pieceToMove.getZone() == Zone.HANGAR) {  // Player chose to taxi pieces
+        makeTaxiMove(pieceToMove);
+      }
+      else {  // Player chose to move pieces on the track 
+        makeMoveMove(pieceToMove);
+      }
     }
   }
   
@@ -523,8 +545,8 @@ public class AeroplaneChessPresenter {
    * Sends a stack move (stack or unstack). The view can only call this method if the presenter 
    * passed AeroplaneChessMessage.STACK_AVAILABLE in {@link View#setPlayerState}.
    */
-  void stackSelected(boolean stack) {
-    check(isMyTurn());
+  public void stackSelected(boolean stack) {
+    check(isMyTurn() && getAeroplaneChessMessage() == AeroplaneChessMessage.STACK_AVAILABLE);
     Color myC = myColor.get();
     List<Piece> allMyPieces = aeroplaneChessState.getPieces(myC);
     List<Piece> myStackedPieces = Lists.newArrayList();
@@ -564,8 +586,8 @@ public class AeroplaneChessPresenter {
    * Sends a shortcut move (take or don't take the shortcut). The view can only call this method if 
    * the presenter passed AeroplaneChessMessage.SHORTCUT_AVAILABLE in {@link View#setPlayerState}.
    */
-  void shortcutSelected(boolean takeShortcut) {
-    check(isMyTurn());
+  public void shortcutSelected(boolean takeShortcut) {
+    check(isMyTurn() && getAeroplaneChessMessage() == AeroplaneChessMessage.SHORTCUT_AVAILABLE);
     List<Piece> myPieces = Lists.newArrayList();
     List<Piece> opponentPiecesToMove = Lists.newArrayList();
     
@@ -604,6 +626,47 @@ public class AeroplaneChessPresenter {
         aeroplaneChessLogic.getOperationsTakeShortcut(
             aeroplaneChessState, 
             myPieces, 
+            opponentPiecesToMove,
+            getPlayerId()));
+  }
+  
+  /**
+   * If a player lands on a jump space, ie., a space of the player's color, and no stack is 
+   * available, then the piece(s) automatically jump 4 spaces.  (There are exceptions, such as
+   * if the space begins the Final Stretch, or if it ends a shortcut.)  The view can only call this 
+   * method if the presenter passed AeroplaneChessMessage.JUMP_AVAILABLE in 
+   * {@link View#setPlayerState}.
+   */
+  public void showJump() {
+    check(isMyTurn() && getAeroplaneChessMessage() == AeroplaneChessMessage.JUMP_AVAILABLE);
+    List<Piece> myPieces = Lists.newArrayList();
+    String piecesMovedLast = aeroplaneChessState.getLastTwoMoves().get(0);
+    Color myC = myColor.get();
+    
+    for (int i = 0; i < PIECES_PER_PLAYER; i++) {
+      if (piecesMovedLast.contains(Integer.toString(i))) {
+        Piece piece = aeroplaneChessState.getPieces(myC).get(i);
+        myPieces.add(new Piece(
+            Zone.TRACK, // Jump spaces are only on the track
+            i, 
+            (piece.getSpace() + JUMP_AMOUNT) % TOTAL_SPACES, // Jumps are 4 spaces
+            myC, 
+            piece.isStacked(), 
+            piece.isFaceDown())); 
+      }
+    }
+    
+    /*
+     *  Get any opponent pieces that were on the space the player will land on and send them
+     *  to the Hangar. Jump spaces are always on the track.
+     */
+    int landSpace = myPieces.get(0).getSpace();
+    List<Piece> opponentPiecesToMove = getOpponentPiecesToMove(landSpace, Zone.TRACK);
+    
+    container.sendMakeMove(
+        aeroplaneChessLogic.getOperationsJump(
+            aeroplaneChessState, 
+            myPieces,
             opponentPiecesToMove,
             getPlayerId()));
   }

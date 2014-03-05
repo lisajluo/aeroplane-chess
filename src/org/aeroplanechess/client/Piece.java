@@ -26,7 +26,7 @@ public class Piece extends Equality {
   }
   
   private Zone zone;
-  private int space;  // Index of location on the board. H: [0-3], L: [0-3], T: [0-51], F: [0-5]
+  private int space;  // Index of location on the board. H: [0-3], L: [0], T: [0-51], F: [0-5]
   private final int pieceId;  // 0-3, since each player holds 4 pieces. For equality testing
   private final Color color;  // For equality testing
   private boolean isStacked;
@@ -37,7 +37,7 @@ public class Piece extends Equality {
     checkArgument(pieceId >= 0 && pieceId < 4);
     checkArgument((space >= 0)
         && ((zone == Zone.HANGAR && space < 4) 
-            || (zone == Zone.LAUNCH && space < 4) 
+            || (zone == Zone.LAUNCH && space == 0) 
             || (zone == Zone.TRACK && space < 52) 
             || (zone == Zone.FINAL_STRETCH && space < 6)));
     
@@ -58,7 +58,7 @@ public class Piece extends Equality {
   }
   
   public String getLocation() {
-    return zone.name().substring(0, 1) + String.format("%02d", space);
+    return zone.name().substring(0, 1) + AeroplaneChessLogic.format(space);
   }
   
   public int getPieceId() {

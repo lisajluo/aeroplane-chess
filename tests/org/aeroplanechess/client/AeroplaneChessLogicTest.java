@@ -116,7 +116,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T51"))
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  // Turn just switched so these are empty
@@ -128,7 +128,7 @@ public class AeroplaneChessLogicTest {
                           // taxi and since roll was not 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAXI),  // Taxi should be legal on a 2
-        new Set("R1", getNewPiece("L01")),  // Taxi plane to launch area
+        new Set("R1", getNewPiece("L00")),  // Taxi plane to launch area
         new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
         new Set(LAST_TWO_MOVES, EMPTY_MOVES));  
     
@@ -151,7 +151,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T51"))
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  // Turn just switched so these are empty
@@ -163,7 +163,7 @@ public class AeroplaneChessLogicTest {
                            // taxi and since roll was not 6
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO),  // Roll die for other player
         new Set(ACTION, TAXI),  
-        new Set("Y1", getNewPiece("L01")),  
+        new Set("Y1", getNewPiece("L00")),  
         new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Clear for other player
         new Set(LAST_TWO_MOVES, EMPTY_MOVES));  // Clear for other player
     
@@ -183,8 +183,8 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T51"))
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
-        .put("Y2", getNewPiece("L02"))  // Y2 was already in Launch zone
+        .put("Y1", getNewPiece("L00"))
+        .put("Y2", getNewPiece("L00"))  // Y2 was already in Launch zone
         .put("Y3", getNewPiece("H03"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))  
         .put(LAST_TWO_MOVES, ImmutableList.of("1", ""))  // Last move was Y1 to Launch on die-6
@@ -194,8 +194,8 @@ public class AeroplaneChessLogicTest {
         new SetTurn(yId),  // Set turn to myself until I use die: 3 after stack
         // Don't roll die if action is to stack and I previously rolled a 6
         new Set(ACTION, STACK),
-        new Set("Y1", getNewPiece("L01")),
-        new Set("Y2", getNewPiece("L02")),
+        new Set("Y1", getNewPiece("L00")),
+        new Set("Y2", getNewPiece("L00")),
         // Didn't use die on this move, don't set lastTwoRolls
         // A stack counts as "moving" both pieces so replace the last move
         new Set(LAST_TWO_MOVES, ImmutableList.of("12", "")));
@@ -214,7 +214,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))
@@ -250,7 +250,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))
@@ -321,7 +321,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up -- last move
         .put("R3", getNewPiece("T10"))  // Unstacked, face up -- several moves ago
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1)) 
@@ -354,7 +354,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  // Unstacked, face up -- not on this turn
         .put("R3", getNewPiece("T25")) 
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS) 
@@ -386,7 +386,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T11"))  
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))  // Unstacked, face up
-        .put("Y1", getNewPiece("L01"))  
+        .put("Y1", getNewPiece("L00"))  
         .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T45"))  // Unstacked, face up
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, -1))  
@@ -418,7 +418,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))  // Unstacked, face up
-        .put("Y1", getNewPiece("L01"))  
+        .put("Y1", getNewPiece("L00"))  
         .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T13"))  // Unstacked, face up
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
@@ -451,7 +451,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", ImmutableList.of("T36", STACKED, FACEUP))  // Stacked pieces - shortcut space
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
@@ -482,7 +482,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T36"))  // Shortcut space
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
@@ -512,7 +512,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T36"))  // Shortcut space
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, ImmutableList.of(3, -1))
@@ -749,7 +749,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T49"))  // Shortcut space - B
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))
-        .put("Y1", getNewPiece("L01"))
+        .put("Y1", getNewPiece("L00"))
         .put("Y2", getNewPiece("H02"))
         .put("Y3", getNewPiece("T45"))
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS)
@@ -796,7 +796,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T12"))  
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("T13"))  
-        .put("Y1", getNewPiece("L01"))  
+        .put("Y1", getNewPiece("L00"))  
         .put("Y2", getNewPiece("H02"))  
         .put("Y3", getNewPiece("T13")) 
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
@@ -825,7 +825,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("T29"))  
         .put("R3", getNewPiece("T40"))
         .put("Y0", getNewPiece("L00"))  
-        .put("Y1", getNewPiece("L01"))  
+        .put("Y1", getNewPiece("L00"))  
         .put("Y2", getNewPiece("T29"))  
         .put("Y3", getNewPiece("T14")) 
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
@@ -872,7 +872,7 @@ public class AeroplaneChessLogicTest {
         .put("R2", getNewPiece("H02"))  
         .put("R3", getNewPiece("T29"))
         .put("Y0", getNewPiece("L00"))  
-        .put("Y1", getNewPiece("L01"))  
+        .put("Y1", getNewPiece("L00"))  
         .put("Y2", getNewPiece("T29"))  
         .put("Y3", getNewPiece("T14")) 
         .put(LAST_TWO_ROLLS, EMPTY_ROLLS)  
@@ -897,11 +897,11 @@ public class AeroplaneChessLogicTest {
         .put(DIE, 6)  // This (3rd) roll was a 6
         .put(ACTION, MOVE)
         .put("R0", getNewPiece("T13"))  
-        .put("R1", getNewPiece("L01"))
+        .put("R1", getNewPiece("L00"))
         .put("R2", ImmutableList.of("T22", STACKED, FACEUP))  
         .put("R3", ImmutableList.of("T22", STACKED, FACEUP))
         .put("Y0", getNewPiece("L00"))  
-        .put("Y1", getNewPiece("L01"))  
+        .put("Y1", getNewPiece("L00"))  
         .put("Y2", getNewPiece("T29"))  
         .put("Y3", getNewPiece("T14")) 
         .put(LAST_TWO_ROLLS, ImmutableList.of(6, 6))  // And previous two rolls were 6's
@@ -985,7 +985,7 @@ public class AeroplaneChessLogicTest {
         new SetTurn(rId),  // Set turn to R since I just backtracked
         new SetRandomInteger(DIE, DIE_FROM, DIE_TO), // Roll die for other player
         new Set(ACTION, MOVE),
-        new Set("Y0", getNewPiece("T39")), // Backtracking 5 spaces F02 --> T39
+        new Set("Y0", getNewPiece("T40")), // Backtracking 5 spaces F02 --> T40
         new Set(LAST_TWO_ROLLS, EMPTY_ROLLS),  // Switching turn, clear these
         new Set(LAST_TWO_MOVES, EMPTY_MOVES));
 
