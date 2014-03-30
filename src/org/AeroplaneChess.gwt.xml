@@ -16,8 +16,10 @@
 
   <!-- Specify the app entry point class.                         -->
   <entry-point class='org.aeroplanechess.graphics.AeroplaneChessEntryPoint'/>
-
+  <!-- GWT Emulator -->
+  <add-linker name='xsiframe' />
+  <inherits name='com.google.gwt.json.JSON'/>
   <!-- Specify the paths for translatable code                    -->
-  <source path='client'/>
-  <source path='graphics'/>
+  <source path='aeroplanechess'/>
+  <source path='game_api'/>
 </module>

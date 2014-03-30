@@ -7,11 +7,11 @@ package org.aeroplanechess.graphics;
 
 import org.aeroplanechess.client.AeroplaneChessLogic;
 import org.aeroplanechess.client.AeroplaneChessPresenter;
-import org.aeroplanechess.client.GameApi;
-import org.aeroplanechess.client.GameApi.Game;
-import org.aeroplanechess.client.GameApi.IteratingPlayerContainer;
-import org.aeroplanechess.client.GameApi.UpdateUI;
-import org.aeroplanechess.client.GameApi.VerifyMove;
+import org.game_api.GameApi;
+import org.game_api.GameApi.Game;
+import org.game_api.GameApi.ContainerConnector;
+import org.game_api.GameApi.UpdateUI;
+import org.game_api.GameApi.VerifyMove;
 import org.aeroplanechess.graphics.AeroplaneChessGraphics;
 
 import com.google.gwt.core.client.EntryPoint;
@@ -25,7 +25,7 @@ import com.google.gwt.user.client.ui.RootPanel;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class AeroplaneChessEntryPoint implements EntryPoint {
-  IteratingPlayerContainer container;
+  ContainerConnector container;
   AeroplaneChessPresenter aeroplaneChessPresenter;
 
   @Override
@@ -41,28 +41,11 @@ public class AeroplaneChessEntryPoint implements EntryPoint {
         aeroplaneChessPresenter.updateUI(updateUI);
       }
     };
-    container = new IteratingPlayerContainer(game, 2);
+    container = new ContainerConnector(game);
     AeroplaneChessGraphics aeroplaneChessGraphics = new AeroplaneChessGraphics();
     aeroplaneChessPresenter = new AeroplaneChessPresenter(aeroplaneChessGraphics, container);
-    final ListBox playerSelect = new ListBox();
-    playerSelect.addItem("Red Player");
-    playerSelect.addItem("Yellow Player");
-    playerSelect.addItem("Viewer");
-    playerSelect.addChangeHandler(new ChangeHandler() {
-      @Override
-      public void onChange(ChangeEvent event) {
-        int selectedIndex = playerSelect.getSelectedIndex();
-        int playerId = selectedIndex == 2 ? GameApi.VIEWER_ID
-            : container.getPlayerIds().get(selectedIndex);
-        container.updateUi(playerId);
-      }
-    });
-    playerSelect.setStyleName("marginTop");
-    FlowPanel flowPanel = new FlowPanel();
-    flowPanel.add(aeroplaneChessGraphics);
-    flowPanel.add(playerSelect);
-    RootPanel.get("mainDiv").add(flowPanel);
+    
+    RootPanel.get("mainDiv").add(aeroplaneChessGraphics);
     container.sendGameReady();
-    container.updateUi(container.getPlayerIds().get(0));
   }
 }

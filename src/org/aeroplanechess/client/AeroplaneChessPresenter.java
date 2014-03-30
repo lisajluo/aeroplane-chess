@@ -10,10 +10,10 @@ import java.util.List;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 
-import org.aeroplanechess.client.GameApi.UpdateUI;
-import org.aeroplanechess.client.GameApi.Container;
-import org.aeroplanechess.client.GameApi.Operation;
-import org.aeroplanechess.client.GameApi.SetTurn;
+import org.game_api.GameApi.UpdateUI;
+import org.game_api.GameApi.Container;
+import org.game_api.GameApi.Operation;
+import org.game_api.GameApi.SetTurn;
 
 import org.aeroplanechess.client.Piece.Zone;
 
@@ -118,8 +118,8 @@ public class AeroplaneChessPresenter {
    *   AeroplaneChessMessage.SHORTCUT_AVAILABLE
    */
   public void updateUI(UpdateUI updateUI) {
-    List<Integer> playerIds = updateUI.getPlayerIds();
-    int yourPlayerId = updateUI.getYourPlayerId();
+    List<String> playerIds = updateUI.getPlayerIds();
+    String yourPlayerId = updateUI.getYourPlayerId();
     int yourPlayerIndex = updateUI.getPlayerIndex(yourPlayerId);
     myColor = yourPlayerIndex == 0 ? Optional.of(Color.R)
         : yourPlayerIndex == 1 ? Optional.of(Color.Y) 
@@ -137,7 +137,7 @@ public class AeroplaneChessPresenter {
     /* Gets the turn of current player from the GameApi state */
     Color turn = null;
     for (Operation operation : updateUI.getLastMove()) {
-      if (operation.getMessageName() == SET_TURN) {
+      if (operation.getMessageName().equals(SET_TURN)) {
         turn = Color.fromPlayerOrder(playerIds.indexOf(((SetTurn) operation).getPlayerId()));
       }
     }
@@ -279,7 +279,7 @@ public class AeroplaneChessPresenter {
   }
   
   /** Sends the initial move to set the board pieces and roll the die (in state only). */
-  private void sendInitialMove(List<Integer> playerIds) {
+  private void sendInitialMove(List<String> playerIds) {
     container.sendMakeMove(aeroplaneChessLogic.getInitialOperations(playerIds.get(0)));
   }
   
@@ -370,9 +370,8 @@ public class AeroplaneChessPresenter {
         newSpace = -1;  // Flag to move into home space in Hangar (ie., R1 goes to H01..)
         newIsFaceDown = true;
       }
-      else if ((oldZone == Zone.TRACK && oldSpace == finalStretchStart && die != 6) || 
-          (oldZone == Zone.FINAL_STRETCH && oldSpace + die > WIN_FINAL_SPACE
-            && oldSpace - die < 0)) {
+      else if (oldZone == Zone.FINAL_STRETCH && oldSpace + die > WIN_FINAL_SPACE
+            && oldSpace - die < 0) {
         // Backtrack pieces to track zone
         newZone = Zone.TRACK;
         newSpace = finalStretchStart - (die - oldSpace) + 1;
@@ -392,7 +391,6 @@ public class AeroplaneChessPresenter {
           // Move was within final stretch
           newSpace = oldSpace + die;
         }
-        
       }
     }
     else if (oldZone == Zone.LAUNCH) {  // A move into the track from the Launch
@@ -424,7 +422,7 @@ public class AeroplaneChessPresenter {
       newPieces.add(new Piece(
           newZone, 
           pieceId, 
-          newSpace == -1 ? pieceId : newSpace, // Move to the new space or home Hangar space
+          (newSpace == -1 ? pieceId : newSpace), // Move to the new space or home Hangar space
           myC,
           piece.isStacked(),  // Never change stacked on a move 
           newIsFaceDown));  // This can change if moved to Hangar from Final Stretch
@@ -486,7 +484,7 @@ public class AeroplaneChessPresenter {
    * Returns the player id from the AeroplaneChess state given my color. R is always the first
    * player, so his playerId will be first in the list.
    */
-  private int getPlayerId() {
+  private String getPlayerId() {
     return aeroplaneChessState.getPlayerIds().get(myColor.get().isRed() ? 0 : 1);
   }
   

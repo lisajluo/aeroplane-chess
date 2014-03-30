@@ -28,7 +28,7 @@ public class AeroplaneChessState {
   }
   
   private final Color turn;
-  private final ImmutableList<Integer> playerIds;
+  private final ImmutableList<String> playerIds;
   private final int die;  // Die roll 1-6
   private final Action action;
   private final ImmutableList<Piece> rPieces;
@@ -47,7 +47,7 @@ public class AeroplaneChessState {
    */
   private final ImmutableList<String> lastTwoMoves;  
   
-  public AeroplaneChessState(Color turn, ImmutableList<Integer> playerIds, int die, Action action, 
+  public AeroplaneChessState(Color turn, ImmutableList<String> playerIds, int die, Action action, 
       ImmutableList<Piece> rPieces, ImmutableList<Piece> yPieces, 
       ImmutableList<Integer> lastTwoRolls, ImmutableList<String> lastTwoMoves) {
     this.turn = checkNotNull(turn);
@@ -64,7 +64,7 @@ public class AeroplaneChessState {
     return turn;
   }
 
-  public ImmutableList<Integer> getPlayerIds() {
+  public ImmutableList<String> getPlayerIds() {
     return playerIds;
   }
   

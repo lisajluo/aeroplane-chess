@@ -22,10 +22,11 @@ import org.junit.runners.JUnit4;
 import org.aeroplanechess.client.AeroplaneChessPresenter.AeroplaneChessMessage;
 import org.aeroplanechess.client.AeroplaneChessPresenter.View;
 import org.aeroplanechess.client.AeroplaneChessState.Action;
-import org.aeroplanechess.client.GameApi.Container;
-import org.aeroplanechess.client.GameApi.Operation;
-import org.aeroplanechess.client.GameApi.UpdateUI;
-import org.aeroplanechess.client.GameApi.SetTurn;
+import org.game_api.GameApi.Container;
+import org.game_api.GameApi.Operation;
+import org.game_api.GameApi.UpdateUI;
+import org.game_api.GameApi.SetTurn;
+import org.game_api.GameApi;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -75,10 +76,10 @@ public class AeroplaneChessPresenterTest {
   private Container mockContainer;
   
   /* Player info */
-  private final int rId = 41;
-  private final int yId = 42;
+  private final String rId = "41";
+  private final String yId = "42";
   private static final String PLAYER_ID = "playerId"; 
-  private final ImmutableList<Integer> playerIds = ImmutableList.of(rId, yId);
+  private final ImmutableList<String> playerIds = ImmutableList.of(rId, yId);
   private final Map<String, Object> rInfo = ImmutableMap.<String, Object>of(PLAYER_ID, rId);
   private final Map<String, Object> yInfo = ImmutableMap.<String, Object>of(PLAYER_ID, yId);
   private final List<Map<String, Object>> playersInfo = ImmutableList.of(rInfo, yInfo);
@@ -248,18 +249,18 @@ public class AeroplaneChessPresenterTest {
 
   @Test
   public void testEmptyStateForR() {
-    aeroplaneChessPresenter.updateUI(createUpdateUI(rId, 0, emptyState));
+    aeroplaneChessPresenter.updateUI(createUpdateUI(rId, rId, emptyState));
     verify(mockContainer).sendMakeMove(aeroplaneChessLogic.getInitialOperations(rId));
   }
 
   @Test
   public void testEmptyStateForY() {
-    aeroplaneChessPresenter.updateUI(createUpdateUI(yId, 0, emptyState));
+    aeroplaneChessPresenter.updateUI(createUpdateUI(yId, rId, emptyState));
   }
 
   @Test
   public void testEmptyStateForViewer() {
-    aeroplaneChessPresenter.updateUI(createUpdateUI(GameApi.VIEWER_ID, 0, emptyState));
+    aeroplaneChessPresenter.updateUI(createUpdateUI(GameApi.VIEWER_ID, rId, emptyState));
   }
   
   /* R "rolls" the die and selects the pieces that he can move. */
@@ -1237,12 +1238,12 @@ public class AeroplaneChessPresenterTest {
    * be found in the state).
    */
   private UpdateUI createUpdateUI(
-      int yourPlayerId, int turnOfPlayerId, Map<String, Object> state) {
+      String yourPlayerId, String turnOfPlayerId, Map<String, Object> state) {
     return new UpdateUI(yourPlayerId, playersInfo, state,
         emptyState, // we ignore lastState
         ImmutableList.<Operation>of(new SetTurn(turnOfPlayerId)),
-        0,
-        ImmutableMap.<Integer, Integer>of());
+        null,
+        ImmutableMap.<String, Integer>of());
   }
   
 }

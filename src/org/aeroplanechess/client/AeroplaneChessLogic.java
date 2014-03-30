@@ -13,13 +13,13 @@ import java.util.Map;
 
 import static org.aeroplanechess.client.Constants.*;
 import org.aeroplanechess.client.AeroplaneChessState.Action;
-import org.aeroplanechess.client.GameApi.EndGame;
-import org.aeroplanechess.client.GameApi.Set;
-import org.aeroplanechess.client.GameApi.SetRandomInteger;
-import org.aeroplanechess.client.GameApi.SetTurn;
-import org.aeroplanechess.client.GameApi.VerifyMove;
-import org.aeroplanechess.client.GameApi.VerifyMoveDone;
-import org.aeroplanechess.client.GameApi.Operation;
+import org.game_api.GameApi.EndGame;
+import org.game_api.GameApi.Set;
+import org.game_api.GameApi.SetRandomInteger;
+import org.game_api.GameApi.SetTurn;
+import org.game_api.GameApi.VerifyMove;
+import org.game_api.GameApi.VerifyMoveDone;
+import org.game_api.GameApi.Operation;
 
 import org.aeroplanechess.client.Piece.Zone;
 
@@ -245,8 +245,8 @@ public class AeroplaneChessLogic {
   }
 
   /** Returns the playerId of the opposite player. */
-  private int getOppositeId(List<Integer> playerIds, int playerId) {
-    return playerIds.get(0) == playerId ? playerIds.get(1) : playerIds.get(0);
+  private String getOppositeId(List<String> playerIds, String playerId) {
+    return playerIds.get(0).equals(playerId) ? playerIds.get(1) : playerIds.get(0);
   }
   
   /** True if last three rolls were all 6's.  Must send affected pieces back to hangar. */
@@ -262,6 +262,25 @@ public class AeroplaneChessLogic {
     for (Piece piece : pieces) {
       if (piece.getZone() != Zone.HANGAR) {
         return false;
+      }
+    }
+    return true;
+  }
+  
+  /**
+   * True if all of the remaining pieces (excepting the pieces that have been moved) are currently
+   * facedown in the Hangar.  This means that the player can win (if the pieces that have been moved 
+   * are legally moved to the Hangar).
+   */
+  private boolean allOtherPiecesInHangar(List<String> lastTwoMoves, List<Piece> myPieces) {
+    // Now check that all remaining pieces (not moved) are in the Hangar and facedown
+    for (Piece piece : myPieces) {
+      int pieceId = piece.getPieceId();
+      if (!lastTwoMoves.get(0).contains(Integer.toString(pieceId)) 
+          && !lastTwoMoves.get(1).contains(Integer.toString(pieceId))) {
+        if (piece.getZone() != Zone.HANGAR || !piece.isFaceDown()) {
+          return false;
+        }
       }
     }
     return true;
@@ -290,7 +309,7 @@ public class AeroplaneChessLogic {
    * Returns a list of operations for when ACTION == TAXI.
    */
   List<Operation> getOperationsTaxi(AeroplaneChessState state, List<Piece> playerMovedPieces, 
-      List<Piece> opponentMovedPieces, int playerId) {
+      List<Piece> opponentMovedPieces, String playerId) {
     List<Operation> expectedOperations;
     Color turn = state.getTurn();
     
@@ -322,7 +341,7 @@ public class AeroplaneChessLogic {
      * If you rolled a 6, you should set turn to yourself and roll the die again. 
      */
     int die = state.getDie();
-    int oppositeId = getOppositeId(state.getPlayerIds(), playerId);
+    String oppositeId = getOppositeId(state.getPlayerIds(), playerId);
     
     if (die == 6) {
       expectedOperations = ImmutableList.<Operation>of(
@@ -350,11 +369,11 @@ public class AeroplaneChessLogic {
    * Returns a list of operations for when ACTION == MOVE.
    */
   List<Operation> getOperationsMove(AeroplaneChessState state, List<Piece> playerMovedPieces, 
-      List<Piece> opponentMovedPieces, int playerId) {
+      List<Piece> opponentMovedPieces, String playerId) {
     List<Operation> expectedOperations;
     Color turn = state.getTurn();
     int die = state.getDie();
-    int oppositeId = getOppositeId(state.getPlayerIds(), playerId);
+    String oppositeId = getOppositeId(state.getPlayerIds(), playerId);
     /*
      * If you rolled a third 6: must send all pieces affected by the last two rolls back to the 
      * hangar and pass turn to the other player.
@@ -477,8 +496,8 @@ public class AeroplaneChessLogic {
         check(launchStart + die == movedSpace, 
             "Moved incorrect spaces from launch.");
       }
-      else if (stateZone == Zone.TRACK) {
-        check((originalSpace + die) % TOTAL_SPACES == movedSpace,
+      else if (stateZone == Zone.TRACK && originalSpace != getStart(turn, Zone.FINAL_STRETCH)) {
+        check((originalSpace + die) % TOTAL_SPACES == movedSpace, 
             "Moved incorrect amount of spaces.", movedSpace, originalSpace, die);
       }
       else {  // You can only move to the TRACK from TRACK or LAUNCH
@@ -510,14 +529,39 @@ public class AeroplaneChessLogic {
           check((originalSpace == finalStretchStart && die == 6 && stateZone == Zone.TRACK)
               || (stateZone == Zone.FINAL_STRETCH && (originalSpace + die == WIN_FINAL_SPACE)), 
             "Can't win on inexact spaces.");
+          List<Operation> operations;
           
-          List<Operation> operations = Lists.newArrayList(
-              new SetTurn(playerId),
-              new Set(ACTION, MOVE));
-          // Add player pieces - no opponent pieces necessary (since we are ending the game)
-          operations.addAll(getOperationsMovePlayerPieces(turn, playerMovedPieces));
-          operations.add(new EndGame(playerId));
-
+          if (allOtherPiecesInHangar(state.getLastTwoMoves(), state.getPieces(turn))) {
+            operations = Lists.newArrayList(
+                new SetTurn(playerId),
+                new Set(ACTION, MOVE));
+            // Add player pieces - no opponent pieces necessary (since we are ending the game)
+            operations.addAll(getOperationsMovePlayerPieces(turn, playerMovedPieces));
+            operations.add(new EndGame(playerId));
+          }
+          else {  // Not ending the game (not all pieces are in the Hangar)
+            // Make changes to last two moves
+            if (die == 6) {
+              operations = Lists.newArrayList(
+                  new SetTurn(playerId),
+                  new Set(ACTION, MOVE));
+              // Add player pieces - no opponent pieces necessary (since we are going to the Hangar)
+              operations.addAll(getOperationsMovePlayerPieces(turn, playerMovedPieces));
+              operations.add(new Set(LAST_TWO_ROLLS, getNewLastTwoRolls(state, die)));
+              operations.add(new Set(LAST_TWO_MOVES, 
+                  getNewLastTwoMoves(state, getMovedString(playerMovedPieces))));
+            }
+            else {  // die != 6 
+              operations = Lists.newArrayList(
+                  new SetTurn(oppositeId),
+                  new Set(ACTION, MOVE));
+              // Add player pieces - no opponent pieces necessary (since we are going to the Hangar)
+              operations.addAll(getOperationsMovePlayerPieces(turn, playerMovedPieces));
+              operations.add(new Set(LAST_TWO_ROLLS, EMPTY_ROLLS));
+              operations.add(new Set(LAST_TWO_MOVES, EMPTY_MOVES));
+            }
+          }
+          
           return operations;
         }
         else { 
@@ -581,7 +625,7 @@ public class AeroplaneChessLogic {
    * Returns a list of operations for when ACTION == STACK.
    */
   List<Operation> getOperationsStack(AeroplaneChessState state, List<Piece> playerMovedPieces, 
-      List<Piece> opponentMovedPieces, int playerId) {
+      List<Piece> opponentMovedPieces, String playerId) {
     List<Operation> expectedOperations;
     Color turn = state.getTurn();
     
@@ -642,7 +686,7 @@ public class AeroplaneChessLogic {
      * If you rolled a 6, you should set turn to yourself and roll the die again. 
      */
     int die = state.getDie();
-    int oppositeId = getOppositeId(state.getPlayerIds(), playerId);
+    String oppositeId = getOppositeId(state.getPlayerIds(), playerId);
     
     if (die == 6) {
       expectedOperations = Lists.newArrayList(
@@ -687,7 +731,7 @@ public class AeroplaneChessLogic {
    * Returns a list of operations for when ACTION == JUMP.
    */
   List<Operation> getOperationsJump(AeroplaneChessState state, List<Piece> playerMovedPieces, 
-      List<Piece> opponentMovedPieces, int playerId) {
+      List<Piece> opponentMovedPieces, String playerId) {
     List<Operation> expectedOperations;
     Color turn = state.getTurn();
     
@@ -742,7 +786,7 @@ public class AeroplaneChessLogic {
      * Set turn to the other player and roll for them.
      */
     int die = state.getDie();
-    int oppositeId = getOppositeId(state.getPlayerIds(), playerId);
+    String oppositeId = getOppositeId(state.getPlayerIds(), playerId);
     Zone movedZone = movedPiece.getZone();
     int movedSpace = movedPiece.getSpace();
     boolean stackOrShortcutAvailable = isShortcutAvailable(movedZone, movedSpace, turn)
@@ -785,11 +829,11 @@ public class AeroplaneChessLogic {
    * Returns a list of operations for when ACTION == TAKE_SHORTCUT.
    */
   List<Operation> getOperationsTakeShortcut(AeroplaneChessState state, 
-      List<Piece> playerMovedPieces, List<Piece> opponentMovedPieces, int playerId) {
+      List<Piece> playerMovedPieces, List<Piece> opponentMovedPieces, String playerId) {
     List<Operation> expectedOperations;
     Color turn = state.getTurn();
     int die = state.getDie(); 
-    int oppositeId = getOppositeId(state.getPlayerIds(), playerId);
+    String oppositeId = getOppositeId(state.getPlayerIds(), playerId);
     
     if (playerMovedPieces.size() > 1) {
     // Check that if there are multiple pieces moved, they are all stacked
@@ -902,8 +946,8 @@ public class AeroplaneChessLogic {
   List<Operation> getExpectedOperations(VerifyMove verifyMove) {
     List<Operation> lastMove = verifyMove.getLastMove();
     Map<String, Object> lastApiState = verifyMove.getLastState();
-    List<Integer> playerIds = verifyMove.getPlayerIds();
-    int lastMovePlayerId = verifyMove.getLastMovePlayerId();
+    List<String> playerIds = verifyMove.getPlayerIds();
+    String lastMovePlayerId = verifyMove.getLastMovePlayerId();
     Color turn = Color.fromPlayerOrder(playerIds.indexOf(lastMovePlayerId));
     List<Operation> expectedOperations = Lists.newArrayList();
     
@@ -980,7 +1024,7 @@ public class AeroplaneChessLogic {
   /**
    * Adds pieces to the board for R and Y players, and rolls the die.
    */
-  List<Operation> getInitialOperations(int rId) {
+  List<Operation> getInitialOperations(String rId) {
     List<Operation> operations = Lists.newArrayList();
     
     // Order: die, action, R0...R3, Y0...Y3, lastTwoRolls, lastTwoMoves
@@ -1013,7 +1057,7 @@ public class AeroplaneChessLogic {
     check(expectedOperations.equals(lastMove), expectedOperations, lastMove);
     
     if (verifyMove.getLastState().isEmpty()) {  // Check that the first move is by the red player
-      check(verifyMove.getLastMovePlayerId() == verifyMove.getPlayerIds().get(0));
+      check(verifyMove.getLastMovePlayerId().equals(verifyMove.getPlayerIds().get(0)));
     }
   }
   
@@ -1068,7 +1112,7 @@ public class AeroplaneChessLogic {
    */
   @SuppressWarnings("unchecked")
   AeroplaneChessState gameApiStateToAeroplaneChessState(Map<String, Object> gameApiState,
-      Color turn, List<Integer> playerIds) {
+      Color turn, List<String> playerIds) {
     
     int die = (Integer) gameApiState.get(DIE);
     Action action = Action.fromLowerString((String) gameApiState.get(ACTION));

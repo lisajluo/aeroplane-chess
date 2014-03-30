@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.aeroplanechess.client.Constants.*;
-import org.aeroplanechess.client.GameApi.Operation;
-import org.aeroplanechess.client.GameApi.Set;
-import org.aeroplanechess.client.GameApi.SetTurn;
-import org.aeroplanechess.client.GameApi.SetRandomInteger;
-import org.aeroplanechess.client.GameApi.VerifyMove;
-import org.aeroplanechess.client.GameApi.VerifyMoveDone;
-import org.aeroplanechess.client.GameApi.EndGame;
+import org.game_api.GameApi.Operation;
+import org.game_api.GameApi.Set;
+import org.game_api.GameApi.SetTurn;
+import org.game_api.GameApi.SetRandomInteger;
+import org.game_api.GameApi.VerifyMove;
+import org.game_api.GameApi.VerifyMoveDone;
+import org.game_api.GameApi.EndGame;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -44,8 +44,8 @@ public class AeroplaneChessLogicTest {
    */
   
   /* Player info */
-  private final int rId = 0;
-  private final int yId = 1;
+  private final String rId = "0";
+  private final String yId = "1";
   private static final String PLAYER_ID = "playerId";  
   private final Map<String, Object> rInfo = ImmutableMap.<String, Object>of(PLAYER_ID, rId);
   private final Map<String, Object> yInfo = ImmutableMap.<String, Object>of(PLAYER_ID, yId);
@@ -65,11 +65,11 @@ public class AeroplaneChessLogicTest {
   }
   
   private VerifyMove move(
-      int lastMovePlayerId, Map<String, Object> lastState, List<Operation> lastMove) {
+      String lastMovePlayerId, Map<String, Object> lastState, List<Operation> lastMove) {
     return new VerifyMove(playersInfo,
         // Don't need to check the resulting state (no hidden decisions)
         emptyState,
-        lastState, lastMove, lastMovePlayerId, ImmutableMap.<Integer, Integer>of());
+        lastState, lastMove, lastMovePlayerId, ImmutableMap.<String, Integer>of());
   }
   
   /** 
