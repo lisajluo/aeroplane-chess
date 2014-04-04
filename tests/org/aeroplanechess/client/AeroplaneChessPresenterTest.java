@@ -276,7 +276,8 @@ public class AeroplaneChessPresenterTest {
         redPieces,  // My pieces
         getPieces(Color.Y, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     /*
@@ -315,7 +316,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, turnChangedState),  // My pieces
         getPieces(Color.R, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -326,7 +328,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, turnChangedState),  // Red pieces
         getPieces(Color.Y, turnChangedState),  // Yellow pieces
         (int) turnChangedState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
 
   /* Y "rolls" the die and selects the pieces that he can move. */
@@ -342,7 +345,8 @@ public class AeroplaneChessPresenterTest {
         yellowPieces,  // My pieces
         getPieces(Color.R, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -382,7 +386,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, turnChangedState),  // My pieces
         getPieces(Color.Y, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   
@@ -394,7 +399,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, turnChangedState),  // Red pieces
         getPieces(Color.Y, turnChangedState),  // Yellow pieces
         (int) turnChangedState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* R "rolls" the die but there are no moves available. */
@@ -410,7 +416,8 @@ public class AeroplaneChessPresenterTest {
         redPieces,  // My pieces
         getPieces(Color.Y, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, false);
@@ -437,7 +444,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, noMoveAvailableState),  // My pieces
         getPieces(Color.R, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -448,7 +456,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, noMoveAvailableState),  // Red pieces
         getPieces(Color.Y, noMoveAvailableState),  // Yellow pieces
         (int) noMoveAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* R shouldn't have any interactions since it's not his turn, but he can view everything
@@ -460,7 +469,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, noMoveAvailableState),  // My pieces
         getPieces(Color.Y, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   
@@ -477,7 +487,8 @@ public class AeroplaneChessPresenterTest {
         yellowPieces,  // My pieces
         getPieces(Color.R, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, false);
@@ -503,7 +514,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, noMoveAvailableState),  // Red pieces
         getPieces(Color.Y, noMoveAvailableState),  // Yellow pieces
         (int) noMoveAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* R "rolls" the die but it's a third 6 so he has to send back to the Hangar. */
@@ -519,7 +531,8 @@ public class AeroplaneChessPresenterTest {
         redPieces,  // My pieces
         getPieces(Color.Y, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, true);
@@ -553,7 +566,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, tripleSixState),  // My pieces
         getPieces(Color.R, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -564,7 +578,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, tripleSixState),  // Red pieces
         getPieces(Color.Y, tripleSixState),  // Yellow pieces
         (int) tripleSixState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Y "rolls" the die but it was a third 6, send back to Hangar. */
@@ -580,7 +595,8 @@ public class AeroplaneChessPresenterTest {
         yellowPieces,  // My pieces
         getPieces(Color.R, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, true);
@@ -613,7 +629,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, tripleSixState),  // My pieces
         getPieces(Color.Y, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -624,7 +641,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, tripleSixState),  // Red pieces
         getPieces(Color.Y, tripleSixState),  // Yellow pieces
         (int) tripleSixState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* R decides to stack the pieces. */
@@ -640,7 +658,8 @@ public class AeroplaneChessPresenterTest {
         redPieces,  // My pieces
         getPieces(Color.Y, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
-        AeroplaneChessMessage.STACK_AVAILABLE);
+        AeroplaneChessMessage.STACK_AVAILABLE,
+        Action.MOVE);
     
     // Pieces that can be stacked as we just moved them. (Have to set representation to STACKED)
     Piece r0Stacked = aeroplaneChessLogic.gameApiPieceToAeroplaneChessPiece(
@@ -672,7 +691,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, stackAvailableState),  // My pieces
         getPieces(Color.R, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -683,7 +703,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, stackAvailableState),  // Red pieces
         getPieces(Color.Y, stackAvailableState),  // Yellow pieces
         (int) stackAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* R shouldn't have any interactions since it's not his turn, but he can view everything
@@ -695,7 +716,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, stackAvailableState),  // My pieces
         getPieces(Color.Y, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Y decides **not** to stack the pieces. */
@@ -711,7 +733,8 @@ public class AeroplaneChessPresenterTest {
         yellowPieces,  // My pieces
         getPieces(Color.R, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
-        AeroplaneChessMessage.STACK_AVAILABLE);
+        AeroplaneChessMessage.STACK_AVAILABLE,
+        Action.MOVE);
     
     // Pieces that can be stacked as we just moved them (however we chose not to stack)
     List<Piece> stackablePieces = Lists.newArrayList(
@@ -738,7 +761,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, stackAvailableState),  // Red pieces
         getPieces(Color.Y, stackAvailableState),  // Yellow pieces
         (int) stackAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* R decides to take the shortcut. */
@@ -754,7 +778,8 @@ public class AeroplaneChessPresenterTest {
         redPieces,  // My pieces
         getPieces(Color.Y, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
-        AeroplaneChessMessage.SHORTCUT_AVAILABLE);
+        AeroplaneChessMessage.SHORTCUT_AVAILABLE,
+        Action.MOVE);
     
     // Pieces that can take the shortcut
     List<Piece> shortcutPieces = Lists.newArrayList(
@@ -780,7 +805,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, shortcutAvailableState),  // My pieces
         getPieces(Color.R, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -792,7 +818,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, shortcutAvailableState),  // Red pieces
         getPieces(Color.Y, shortcutAvailableState),  // Yellow pieces
         (int) shortcutAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Y decides **not** to take the shortcut. */
@@ -807,7 +834,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, shortcutAvailableState),  // My pieces
         getPieces(Color.R, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
-        AeroplaneChessMessage.SHORTCUT_AVAILABLE);
+        AeroplaneChessMessage.SHORTCUT_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.shortcutSelected(false);
     
@@ -828,7 +856,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, shortcutAvailableState),  // My pieces
         getPieces(Color.Y, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -840,7 +869,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, shortcutAvailableState),  // Red pieces
         getPieces(Color.Y, shortcutAvailableState),  // Yellow pieces
         (int) shortcutAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* R's automatic jump after stacking on a jump space. */
@@ -855,7 +885,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, jumpAvailableState),  // My pieces
         getPieces(Color.Y, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
-        AeroplaneChessMessage.JUMP_AVAILABLE);
+        AeroplaneChessMessage.JUMP_AVAILABLE,
+        Action.STACK);
     
     aeroplaneChessPresenter.showJump();
     
@@ -886,7 +917,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, jumpAvailableState),  // My pieces
         getPieces(Color.R, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.STACK);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -897,7 +929,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, jumpAvailableState),  // Red pieces
         getPieces(Color.Y, jumpAvailableState),  // Yellow pieces
         (int) jumpAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.STACK);
   }
   
   /* Y's automatic jump after stacking on a jump space. */
@@ -912,7 +945,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, jumpAvailableState),  // My pieces
         getPieces(Color.R, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
-        AeroplaneChessMessage.JUMP_AVAILABLE);
+        AeroplaneChessMessage.JUMP_AVAILABLE,
+        Action.STACK);
     
     aeroplaneChessPresenter.showJump();
     
@@ -943,7 +977,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, jumpAvailableState),  // My pieces
         getPieces(Color.Y, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.STACK);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -954,7 +989,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, jumpAvailableState),  // Red pieces
         getPieces(Color.Y, jumpAvailableState),  // Yellow pieces
         (int) jumpAvailableState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.STACK);
   }
   
   /* R "rolls" the die but since it is inexact, needs to backtrack to the Track zone. */
@@ -970,7 +1006,8 @@ public class AeroplaneChessPresenterTest {
         redPieces,  // My pieces
         getPieces(Color.Y, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1001,7 +1038,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, nearEndBacktrackState),  // My pieces
         getPieces(Color.R, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -1012,7 +1050,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, nearEndBacktrackState),  // Red pieces
         getPieces(Color.Y, nearEndBacktrackState),  // Yellow pieces
         (int) nearEndBacktrackState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
 
   /* Y "rolls" the die but since it is inexact, needs to backtrack to the Track zone. */
@@ -1028,7 +1067,8 @@ public class AeroplaneChessPresenterTest {
         yellowPieces,  // My pieces
         getPieces(Color.R, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1059,7 +1099,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, nearEndBacktrackState),  // My pieces
         getPieces(Color.Y, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   
@@ -1071,7 +1112,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, nearEndBacktrackState),  // Red pieces
         getPieces(Color.Y, nearEndBacktrackState),  // Yellow pieces
         (int) nearEndBacktrackState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }  
   
   /* R "rolls" the die and wins the game. */
@@ -1087,7 +1129,8 @@ public class AeroplaneChessPresenterTest {
         redPieces,  // My pieces
         getPieces(Color.Y, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1118,7 +1161,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, endWinningState),  // My pieces
         getPieces(Color.R, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -1129,7 +1173,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, endWinningState),  // Red pieces
         getPieces(Color.Y, endWinningState),  // Yellow pieces
         (int) endWinningState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
 
   /* Y "rolls" the die and wins the game. */
@@ -1145,7 +1190,8 @@ public class AeroplaneChessPresenterTest {
         yellowPieces,  // My pieces
         getPieces(Color.R, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
-        AeroplaneChessMessage.ROLL_AVAILABLE);
+        AeroplaneChessMessage.ROLL_AVAILABLE,
+        Action.MOVE);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1176,7 +1222,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, endWinningState),  // My pieces
         getPieces(Color.Y, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }
   
   
@@ -1188,7 +1235,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, endWinningState),  // Red pieces
         getPieces(Color.Y, endWinningState),  // Yellow pieces
         (int) endWinningState.get(DIE), 
-        AeroplaneChessMessage.OTHER_TURN);
+        AeroplaneChessMessage.OTHER_TURN,
+        Action.MOVE);
   }  
   
   /**

@@ -55,6 +55,12 @@ public interface AeroplaneChessImages extends ClientBundle {
   @Source("images/pieces/g_facedown.png")
   ImageResource g_facedown();
   
+  @Source("images/pieces/empty.png")
+  ImageResource empty();
+  
+  @Source("images/pieces/drop_highlight.png")
+  ImageResource drop();
+  
   /* Die ----------*/
   @Source("images/die/1.png")
   ImageResource one();

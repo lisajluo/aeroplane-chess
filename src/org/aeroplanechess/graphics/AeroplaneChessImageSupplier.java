@@ -70,4 +70,12 @@ public class AeroplaneChessImageSupplier {
   public ImageResource getBoard() {
     return aeroplaneChessImages.board();
   }
+  
+  public ImageResource getEmptyPiece() {
+    return aeroplaneChessImages.empty();
+  }
+  
+  public ImageResource getDropHighlight() {
+    return aeroplaneChessImages.drop();
+  }
 }

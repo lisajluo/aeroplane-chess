@@ -87,6 +87,10 @@ public class AeroplaneChessLogic {
    * attempt to move.
    */
   boolean isStackAvailable(Zone zone, int space, List<Piece> pieces) {
+    if (zone == Zone.LAUNCH || zone == Zone.HANGAR){ 
+      return false;
+    }
+    
     for (Piece piece : pieces) {
       if (piece.getSpace() == space && piece.getZone() == zone) {
         return true;
@@ -272,17 +276,21 @@ public class AeroplaneChessLogic {
    * facedown in the Hangar.  This means that the player can win (if the pieces that have been moved 
    * are legally moved to the Hangar).
    */
-  private boolean allOtherPiecesInHangar(List<String> lastTwoMoves, List<Piece> myPieces) {
-    // Now check that all remaining pieces (not moved) are in the Hangar and facedown
+  private boolean allOtherPiecesInHangar(List<Piece> playerMovedPieces, List<Piece> myPieces) {
+    String movedPiecesString = "";
+    for (Piece movedPiece : playerMovedPieces) {
+      movedPiecesString += movedPiece.getPieceId();
+    }
+    
     for (Piece piece : myPieces) {
       int pieceId = piece.getPieceId();
-      if (!lastTwoMoves.get(0).contains(Integer.toString(pieceId)) 
-          && !lastTwoMoves.get(1).contains(Integer.toString(pieceId))) {
+      if (!movedPiecesString.contains(Integer.toString(pieceId))) {
         if (piece.getZone() != Zone.HANGAR || !piece.isFaceDown()) {
           return false;
         }
       }
     }
+
     return true;
   }
   
@@ -530,8 +538,7 @@ public class AeroplaneChessLogic {
               || (stateZone == Zone.FINAL_STRETCH && (originalSpace + die == WIN_FINAL_SPACE)), 
             "Can't win on inexact spaces.");
           List<Operation> operations;
-          
-          if (allOtherPiecesInHangar(state.getLastTwoMoves(), state.getPieces(turn))) {
+          if (allOtherPiecesInHangar(playerMovedPieces, state.getPieces(turn))) {
             operations = Lists.newArrayList(
                 new SetTurn(playerId),
                 new Set(ACTION, MOVE));
@@ -1033,12 +1040,12 @@ public class AeroplaneChessLogic {
     operations.add(new Set(ACTION, INITIALIZE));
     
     // add Red player's pieces
-    for (int i = 0; i <= PIECES_PER_PLAYER; i++) {
+    for (int i = 0; i < PIECES_PER_PLAYER; i++) {
       operations.add(new Set(R + i, getNewPiece("H0" + i)));
     }
     
     // add Yellow player's pieces
-    for (int i = 0; i <= PIECES_PER_PLAYER; i++) {
+    for (int i = 0; i < PIECES_PER_PLAYER; i++) {
       operations.add(new Set(Y + i, getNewPiece("H0" + i)));
     }
     

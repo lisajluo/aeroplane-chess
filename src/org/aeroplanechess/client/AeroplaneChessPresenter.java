@@ -15,6 +15,8 @@ import org.game_api.GameApi.Container;
 import org.game_api.GameApi.Operation;
 import org.game_api.GameApi.SetTurn;
 
+
+import org.aeroplanechess.client.AeroplaneChessState.Action;
 import org.aeroplanechess.client.Piece.Zone;
 
 import static org.aeroplanechess.client.Constants.*;
@@ -35,9 +37,17 @@ public class AeroplaneChessPresenter {
    * SHORTCUT_AVAILABLE: player just moved/jumped/stacked and can now take shortcut (or not)
    * JUMP_AVAILABLE: player just moved/stacked and now jump will automatically occur
    * OTHER_TURN: it's the turn of the other player, so nothing is available
+   * WON_GAME: player won the game
+   * LOST_GAME: player lost the game
    */
   public enum AeroplaneChessMessage {
-    ROLL_AVAILABLE, STACK_AVAILABLE, SHORTCUT_AVAILABLE, JUMP_AVAILABLE, OTHER_TURN
+    ROLL_AVAILABLE, 
+    STACK_AVAILABLE, 
+    SHORTCUT_AVAILABLE, 
+    JUMP_AVAILABLE, 
+    OTHER_TURN, 
+    WON_GAME, 
+    LOST_GAME
   }
 
   public interface View {
@@ -76,7 +86,7 @@ public class AeroplaneChessPresenter {
 
     /** Sets the state for a viewer, i.e., not one of the players. */
     void setViewerState(List<Piece> redPieces, List<Piece> yellowPieces, int die,
-        AeroplaneChessMessage aeroplaneChessMessage);
+        AeroplaneChessMessage aeroplaneChessMessage, Action lastAction);
 
     /**
      * Sets the state for a player (whether the player has the turn or not).
@@ -84,7 +94,7 @@ public class AeroplaneChessPresenter {
      * etc.) depends on AeroplaneChessMessage.
      */
     void setPlayerState(List<Piece> myPieces, List<Piece> opponentPieces, int die,
-        AeroplaneChessMessage aeroplaneChessMessage);
+        AeroplaneChessMessage aeroplaneChessMessage, Action lastAction);
     
     /**
      * Asks the player to choose which pieces to taxi or move. The player will select using
@@ -124,7 +134,6 @@ public class AeroplaneChessPresenter {
     myColor = yourPlayerIndex == 0 ? Optional.of(Color.R)
         : yourPlayerIndex == 1 ? Optional.of(Color.Y) 
         : Optional.<Color>absent();
-        
     
     if (updateUI.getState().isEmpty()) {
       // The R player sends the initial setup move.
@@ -134,7 +143,10 @@ public class AeroplaneChessPresenter {
       return;
     }
     
-    /* Gets the turn of current player from the GameApi state */
+    /* 
+     * Gets the turn of current player from the GameApi state, and action taken in last move 
+     * to use for animation.
+     */
     Color turn = null;
     for (Operation operation : updateUI.getLastMove()) {
       if (operation.getMessageName().equals(SET_TURN)) {
@@ -147,12 +159,15 @@ public class AeroplaneChessPresenter {
         turn, 
         playerIds);
     
+    Action lastAction = aeroplaneChessState.getAction();
+    
     if (updateUI.isViewer()) {  // The viewer can see the board and die roll but can't interact.
       view.setViewerState(
           aeroplaneChessState.getPieces(Color.R), 
           aeroplaneChessState.getPieces(Color.Y), 
           aeroplaneChessState.getDie(), 
-          getAeroplaneChessMessage());
+          getAeroplaneChessMessage(),
+          lastAction);
       return;
     }
     
@@ -170,18 +185,34 @@ public class AeroplaneChessPresenter {
         aeroplaneChessState.getPieces(myC), 
         aeroplaneChessState.getPieces(opponentColor), 
         aeroplaneChessState.getDie(), 
-        getAeroplaneChessMessage());
+        getAeroplaneChessMessage(),
+        lastAction);
   }
   
   /**
    * Returns a message that is sent to the View specifying how the View should interact with the 
-   * player; see AeroplaneChessMessage
-   * @return
+   * player; see AeroplaneChessMessage.
    */
   private AeroplaneChessMessage getAeroplaneChessMessage() {
     if (!isMyTurn()) {
       return AeroplaneChessMessage.OTHER_TURN;
     }
+    
+    Color turn = aeroplaneChessState.getTurn();
+    
+    /*
+     * Game over - you won!
+     */
+    if (allPiecesFacedownInHangar(aeroplaneChessState.getPieces(turn))) {
+      return AeroplaneChessMessage.WON_GAME;
+    }
+    /*
+     * Game over - you lost!
+     */
+    if (allPiecesFacedownInHangar(aeroplaneChessState.getPieces(turn.getOppositeColor()))) {
+      return AeroplaneChessMessage.LOST_GAME;
+    }
+    
     /*
      * Turn has just switched, so need to display the die roll for the player. This will allow
      * for some interaction for "rolling" (ie., click on a die).
@@ -190,7 +221,6 @@ public class AeroplaneChessPresenter {
       return AeroplaneChessMessage.ROLL_AVAILABLE;
     }
     
-    Color turn = aeroplaneChessState.getTurn();
     /*
      * It's not the first move for the player, so some pieces were moved. piecesMovedLast
      * is a non-empty string for that reason.
@@ -249,6 +279,20 @@ public class AeroplaneChessPresenter {
   
   private boolean isMyTurn() {
     return myColor.isPresent() && myColor.get() == aeroplaneChessState.getTurn();
+  }
+  
+  /**
+   * Returns true if all pieces are facedown in the Hangar, false otherwise.
+   * @param pieces
+   * @return
+   */
+  private boolean allPiecesFacedownInHangar(List<Piece> pieces) {
+    for (Piece piece : pieces) {
+      if (piece.getZone() != Zone.HANGAR || !piece.isFaceDown()) {
+        return false;
+      }
+    }
+    return true;
   }
   
   /** 
@@ -323,6 +367,15 @@ public class AeroplaneChessPresenter {
    * @param oldPiece The piece before movement
    */
   private void makeTaxiMove(Piece oldPiece) {
+    container.sendMakeMove(
+        aeroplaneChessLogic.getOperationsTaxi(
+            aeroplaneChessState, 
+            getTaxiPieces(oldPiece), 
+            EMPTY_PIECES,  // Can't send opponent pieces on taxi
+            getPlayerId()));
+  }
+  
+  private List<Piece> getTaxiPieces(Piece oldPiece) {
     // There will only be one piece selected to taxi
     int pieceId = oldPiece.getPieceId();
     Piece newPiece = new Piece(
@@ -333,12 +386,7 @@ public class AeroplaneChessPresenter {
         false,  // Pieces in launch are never stacked
         false);  // Pieces in Launch are never facedown
     
-    container.sendMakeMove(
-        aeroplaneChessLogic.getOperationsTaxi(
-            aeroplaneChessState, 
-            Lists.newArrayList(newPiece), 
-            EMPTY_PIECES,  // Can't send opponent pieces on taxi
-            getPlayerId()));
+    return Lists.newArrayList(newPiece);
   }
   
   /**
@@ -347,6 +395,25 @@ public class AeroplaneChessPresenter {
    * @param oldPiece The piece before movement
    */
   private void makeMoveMove(Piece oldPiece) {
+    List<Piece> newPieces = getMovePieces(oldPiece);
+    int newSpace = newPieces.get(0).getSpace();
+    Zone newZone = newPieces.get(0).getZone();
+
+    /*
+     *  Get any opponent pieces that were on the space the player will land on and send them
+     *  to the Hangar.
+     */
+    List<Piece> opponentPiecesToMove = getOpponentPiecesToMove(newSpace, newZone);
+    
+    container.sendMakeMove(
+        aeroplaneChessLogic.getOperationsMove(
+            aeroplaneChessState, 
+            newPieces, 
+            opponentPiecesToMove,
+            getPlayerId()));
+  }
+  
+  private List<Piece> getMovePieces(Piece oldPiece) {
     // All pieces selected were in the same location (taken care of by UI)
     Zone oldZone = oldPiece.getZone();
     int oldSpace = oldPiece.getSpace();
@@ -409,7 +476,7 @@ public class AeroplaneChessPresenter {
     
     if (oldPiece.isStacked()) { // Add other stacked pieces if necessary
       for (Piece piece : allMyPieces) {
-        if (piece.getZone() == oldZone && piece.getSpace() == oldSpace && !piece.equals(oldPiece)) {
+        if (!piece.equals(oldPiece) && piece.getZone() == oldZone && piece.getSpace() == oldSpace) {
           oldPieces.add(piece);
         }
       }
@@ -427,19 +494,8 @@ public class AeroplaneChessPresenter {
           piece.isStacked(),  // Never change stacked on a move 
           newIsFaceDown));  // This can change if moved to Hangar from Final Stretch
     }
-
-    /*
-     *  Get any opponent pieces that were on the space the player will land on and send them
-     *  to the Hangar.
-     */
-    List<Piece> opponentPiecesToMove = getOpponentPiecesToMove(newSpace, newZone);
-     
-    container.sendMakeMove(
-        aeroplaneChessLogic.getOperationsMove(
-            aeroplaneChessState, 
-            newPieces, 
-            opponentPiecesToMove,
-            getPlayerId()));
+    
+    return newPieces;
   }
   
   /**
@@ -487,7 +543,6 @@ public class AeroplaneChessPresenter {
   private String getPlayerId() {
     return aeroplaneChessState.getPlayerIds().get(myColor.get().isRed() ? 0 : 1);
   }
-  
   
   /* ***
    * Below: Methods the view can call
@@ -667,5 +722,18 @@ public class AeroplaneChessPresenter {
             myPieces,
             opponentPiecesToMove,
             getPlayerId()));
+  }
+  
+  /**
+   * Returns a list of pieces representing the possible destinations on the board.
+   */
+  public Piece getDestination(Piece source) {
+    int die = aeroplaneChessState.getDie();   
+    
+    if (source.getZone() == Zone.HANGAR && die % 2 == 0) {
+      return getTaxiPieces(source).get(0);
+    }
+    
+    return getMovePieces(source).get(0);
   }
 }

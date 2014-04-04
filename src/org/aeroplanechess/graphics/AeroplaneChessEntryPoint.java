@@ -9,6 +9,7 @@ import org.aeroplanechess.client.AeroplaneChessLogic;
 import org.aeroplanechess.client.AeroplaneChessPresenter;
 import org.game_api.GameApi;
 import org.game_api.GameApi.Game;
+import org.game_api.GameApi.IteratingPlayerContainer;
 import org.game_api.GameApi.ContainerConnector;
 import org.game_api.GameApi.UpdateUI;
 import org.game_api.GameApi.VerifyMove;
@@ -26,6 +27,8 @@ import com.google.gwt.user.client.ui.RootPanel;
  */
 public class AeroplaneChessEntryPoint implements EntryPoint {
   ContainerConnector container;
+  // Keeping old code in for debug purposes
+  //IteratingPlayerContainer container;
   AeroplaneChessPresenter aeroplaneChessPresenter;
 
   @Override
@@ -42,9 +45,27 @@ public class AeroplaneChessEntryPoint implements EntryPoint {
       }
     };
     container = new ContainerConnector(game);
+    //container = new IteratingPlayerContainer(game, 2);
     AeroplaneChessGraphics aeroplaneChessGraphics = new AeroplaneChessGraphics();
     aeroplaneChessPresenter = new AeroplaneChessPresenter(aeroplaneChessGraphics, container);
-    
+    /*final ListBox playerSelect = new ListBox();
+      playerSelect.addItem("Red Player");
+      playerSelect.addItem("Yellow Player");
+      playerSelect.addItem("Viewer");
+      playerSelect.addChangeHandler(new ChangeHandler() {
+        @Override
+        public void onChange(ChangeEvent event) {
+          int selectedIndex = playerSelect.getSelectedIndex();
+          String playerId = selectedIndex == 2 ? GameApi.VIEWER_ID
+              : container.getPlayerIds().get(selectedIndex);
+          container.updateUi(playerId);
+        }
+      });
+      playerSelect.setStyleName("marginTop");
+      FlowPanel flowPanel = new FlowPanel();
+      flowPanel.add(aeroplaneChessGraphics);
+      flowPanel.add(playerSelect);
+      RootPanel.get("mainDiv").add(flowPanel); */
     RootPanel.get("mainDiv").add(aeroplaneChessGraphics);
     container.sendGameReady();
   }

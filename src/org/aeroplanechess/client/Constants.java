@@ -96,4 +96,8 @@ public final class Constants {
   /* Names of the various GameApi operations */
   static final String SET = "Set";
   static final String SET_TURN = "SetTurn";
+  
+  /* Animation durations */
+  public static final int NORMAL_DURATION = 300;
+  public static final int SHORTCUT_DURATION = 1000;
 }
