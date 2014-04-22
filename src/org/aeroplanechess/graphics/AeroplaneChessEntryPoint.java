@@ -21,52 +21,103 @@ import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.googlecode.mgwt.dom.client.event.orientation.OrientationChangeEvent;
+import com.googlecode.mgwt.dom.client.event.orientation.OrientationChangeEvent.ORIENTATION;
+import com.googlecode.mgwt.dom.client.event.orientation.OrientationChangeHandler;
+import com.googlecode.mgwt.dom.client.event.tap.TapEvent;
+import com.googlecode.mgwt.dom.client.event.tap.TapHandler;
+import com.googlecode.mgwt.ui.client.MGWT;
+import com.googlecode.mgwt.ui.client.MGWTSettings;
+import com.googlecode.mgwt.ui.client.MGWTSettings.ViewPort;
+import com.googlecode.mgwt.ui.client.MGWTSettings.ViewPort.DENSITY;
+import com.googlecode.mgwt.ui.client.MGWTStyle;
+import com.googlecode.mgwt.ui.client.widget.Button;
+import com.googlecode.mgwt.ui.client.widget.LayoutPanel;
+import com.googlecode.mgwt.ui.client.theme.base.ButtonCss;
+import com.googlecode.mgwt.ui.client.dialog.Dialogs.AlertCallback;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class AeroplaneChessEntryPoint implements EntryPoint {
-  ContainerConnector container;
+  //ContainerConnector container;
   // Keeping old code in for debug purposes
-  //IteratingPlayerContainer container;
+  IteratingPlayerContainer container;
   AeroplaneChessPresenter aeroplaneChessPresenter;
 
   @Override
   public void onModuleLoad() {
+    // Set viewport and other settings for mobile
+    MGWT.applySettings(MGWTSettings.getAppSetting());
+    
     Game game = new Game() {
       @Override
       public void sendVerifyMove(VerifyMove verifyMove) {
         container.sendVerifyMoveDone(new AeroplaneChessLogic().verify(verifyMove));
       }
-
       @Override
       public void sendUpdateUI(UpdateUI updateUI) {
         aeroplaneChessPresenter.updateUI(updateUI);
       }
     };
-    container = new ContainerConnector(game);
-    //container = new IteratingPlayerContainer(game, 2);
+    //container = new ContainerConnector(game);
+    container = new IteratingPlayerContainer(game, 2);
     AeroplaneChessGraphics aeroplaneChessGraphics = new AeroplaneChessGraphics();
     aeroplaneChessPresenter = new AeroplaneChessPresenter(aeroplaneChessGraphics, container);
-    /*final ListBox playerSelect = new ListBox();
-      playerSelect.addItem("Red Player");
-      playerSelect.addItem("Yellow Player");
-      playerSelect.addItem("Viewer");
-      playerSelect.addChangeHandler(new ChangeHandler() {
-        @Override
-        public void onChange(ChangeEvent event) {
-          int selectedIndex = playerSelect.getSelectedIndex();
-          String playerId = selectedIndex == 2 ? GameApi.VIEWER_ID
-              : container.getPlayerIds().get(selectedIndex);
-          container.updateUi(playerId);
-        }
-      });
-      playerSelect.setStyleName("marginTop");
-      FlowPanel flowPanel = new FlowPanel();
-      flowPanel.add(aeroplaneChessGraphics);
-      flowPanel.add(playerSelect);
-      RootPanel.get("mainDiv").add(flowPanel); */
-    RootPanel.get("mainDiv").add(aeroplaneChessGraphics);
+
+    LayoutPanel buttonHolder = new LayoutPanel();
+    buttonHolder.addStyleName("marginTop");
+    
+    final ButtonCss buttonCss = MGWTStyle.getTheme().getMGWTClientBundle().getButtonCss();
+    final Button redPlayer = new Button("Red player");
+    final Button yellowPlayer = new Button("Yellow player");
+    final Button viewer = new Button("Viewer"); 
+    redPlayer.setSmall(true);
+    yellowPlayer.setSmall(true);
+    viewer.setSmall(true);
+    
+    redPlayer.addTapHandler(new TapHandler() {
+      @Override
+      public void onTap(TapEvent event) {
+        container.updateUi(container.getPlayerIds().get(0));
+        redPlayer.addStyleName(buttonCss.active());
+        yellowPlayer.removeStyleName(buttonCss.active());
+        viewer.removeStyleName(buttonCss.active());
+      }                    
+    });
+    
+    yellowPlayer.addTapHandler(new TapHandler() {
+      @Override
+      public void onTap(TapEvent event) {
+        container.updateUi(container.getPlayerIds().get(1));
+        yellowPlayer.addStyleName(buttonCss.active());
+        redPlayer.removeStyleName(buttonCss.active());
+        viewer.removeStyleName(buttonCss.active());
+      }                    
+    });
+    
+    viewer.addTapHandler(new TapHandler() {
+      @Override
+      public void onTap(TapEvent event) {
+        container.updateUi(GameApi.VIEWER_ID);
+        viewer.addStyleName(buttonCss.active());
+        redPlayer.removeStyleName(buttonCss.active());
+        yellowPlayer.removeStyleName(buttonCss.active());
+      }                    
+    }); 
+    
+    buttonHolder.add(redPlayer);
+    buttonHolder.add(yellowPlayer);
+    buttonHolder.add(viewer);
+  
+    FlowPanel flowPanel = new FlowPanel();
+    flowPanel.add(aeroplaneChessGraphics);
+    flowPanel.add(buttonHolder);
+    RootPanel.get("mainDiv").add(flowPanel); 
+    
+    //RootPanel.get("mainDiv").add(aeroplaneChessGraphics);
     container.sendGameReady();
+    container.updateUi(container.getPlayerIds().get(0));
+    redPlayer.addStyleName(buttonCss.active());
   }
 }

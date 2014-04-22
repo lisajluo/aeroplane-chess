@@ -16,6 +16,8 @@
 
   <!-- Specify the app entry point class.                         -->
   <entry-point class='org.aeroplanechess.graphics.AeroplaneChessEntryPoint'/>
+  <!-- Mobile GWT -->
+  <inherits name="com.googlecode.mgwt.MGWT"/>
   <!-- GWT Emulator -->
   <add-linker name='xsiframe' />
   <inherits name='com.google.gwt.json.JSON'/>

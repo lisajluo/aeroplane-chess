@@ -8,13 +8,16 @@ import org.aeroplanechess.client.Color;
  * of where to place the pieces on the board.
  */
 public final class Board {
+  // Divisor to get mobile coordinates
+  private static final double divisor = 2.5;
+  
   public static class Point {
     private int x;
     private int y;
     
     Point(int x, int y) {
-      this.x = x;
-      this.y = y;
+      this.x = (int) (x/divisor);
+      this.y = (int) (y/divisor);
     }
     
     public int getX() {

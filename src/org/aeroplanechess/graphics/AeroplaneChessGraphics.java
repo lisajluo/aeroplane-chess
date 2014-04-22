@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Iterator;
 
 import org.aeroplanechess.client.AeroplaneChessPresenter;
-import org.aeroplanechess.client.Color;
 import org.aeroplanechess.client.AeroplaneChessPresenter.AeroplaneChessMessage;
 import org.aeroplanechess.client.AeroplaneChessState.Action;
 import org.aeroplanechess.client.Piece;
@@ -46,6 +45,17 @@ import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.media.client.Audio;
 import com.google.gwt.resources.client.ImageResource;
+
+import com.googlecode.mgwt.dom.client.event.tap.TapEvent;
+import com.googlecode.mgwt.dom.client.event.tap.TapHandler;
+import com.googlecode.mgwt.dom.client.event.touch.TouchCancelEvent;
+import com.googlecode.mgwt.dom.client.event.touch.TouchEndEvent;
+import com.googlecode.mgwt.dom.client.event.touch.TouchHandler;
+import com.googlecode.mgwt.dom.client.event.touch.TouchMoveEvent;
+import com.googlecode.mgwt.dom.client.event.touch.TouchStartEvent;
+import com.googlecode.mgwt.ui.client.dialog.Dialogs.AlertCallback;
+import com.googlecode.mgwt.ui.client.dialog.ConfirmDialog.ConfirmCallback;
+import com.googlecode.mgwt.ui.client.widget.touch.TouchDelegate;
 
 /**
  * Graphics for the Aeroplane Chess game (board, piece placement, die).
@@ -120,6 +130,15 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       checkGameOver(message);
     }
     else { // Animate on subsequent moves
+      /* 
+       * Switch pieces if the turn just switched (or animation will be funky in 
+       * IteratingPlayerContainer) 
+       */
+      if (myOldPieces.get(0).getColor() != myPieces.get(0).getColor()) {
+        List<Piece> temp = myOldPieces;
+        myOldPieces = opponentOldPieces;
+        opponentOldPieces = temp;
+      }
       boolean multipleAnimations = animateMove(myPieces, opponentPieces, die, message, lastAction);
       
       Timer animationTimer = new Timer() { 
@@ -145,21 +164,21 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   public void checkGameOver(AeroplaneChessMessage message) {
     if (message == AeroplaneChessMessage.WON_GAME) { 
       playAudio(winGame);
-      new MessageBox("You won!", false, new MessageBox.OptionChosen() {
+      new MessageBox("You won!", new AlertCallback() {
         @Override
-        public void optionChosen(String option) {
+        public void onButtonPressed() {
           // Do nothing
         }
-      }).center();
+      });
     }
     else if (message == AeroplaneChessMessage.LOST_GAME) { 
       playAudio(loseGame);
-      new MessageBox("You lost!", false, new MessageBox.OptionChosen() {
+      new MessageBox("You lost!", new AlertCallback() {
         @Override
-        public void optionChosen(String option) {
+        public void onButtonPressed() {
           // Do nothing
         }
-      }).center();
+      });
     }
   }
   
@@ -227,6 +246,16 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
           // We can get the Image of the piece at this location using the TOP and LEFT coordinates. 
           final Image image = (Image) getWidgetAtLocation(coord);
           image.setResource(imageSupplier.getPiece(PieceImage.Factory.getPiece(piece, true)));
+          /* Tap functionality - doesn't work well in desktop
+          new TouchDelegate(image).addTapHandler(new TapHandler() {
+            @Override
+            public void onTap(TapEvent event) {
+              if (enablePieceClick) {
+                presenter.piecesSelected(Optional.<Piece>of(piece));
+                enablePieceClick = false;
+              }
+            }
+          }); */
           // Click functionality
           image.addClickHandler(new ClickHandler() {
             @Override
@@ -344,6 +373,23 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
     if (clickable) {
       enableDieClick = true;
       image = new Image(imageSupplier.getDie(DieImage.Factory.getDie(0)));
+      /* Tap functionality - doesn't work well in desktop
+      new TouchDelegate(image).addTapHandler(new TapHandler() {
+        @Override
+        public void onTap(TapEvent event) {
+          if (enableDieClick) {
+            playAudio(dieRoll);
+            image.setResource(imageSupplier.getDie(DieImage.Factory.getDie(die)));
+            enableDieClick = false;
+            new MessageBox("You rolled a " + die + "!", new AlertCallback() {
+              @Override
+              public void onButtonPressed() {
+                presenter.dieRolled();
+              }
+            });
+          }
+        }
+      }); */
       image.addClickHandler(new ClickHandler() {
         @Override
         public void onClick(ClickEvent event) {
@@ -351,13 +397,12 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
             playAudio(dieRoll);
             image.setResource(imageSupplier.getDie(DieImage.Factory.getDie(die)));
             enableDieClick = false;
-            new MessageBox("You rolled a " + die + "!", false, 
-                new MessageBox.OptionChosen() {
-                    @Override
-                    public void optionChosen(String option) {
-                      presenter.dieRolled();
-                    }
-                  }).center();
+            new MessageBox("You rolled a " + die + "!", new AlertCallback() {
+              @Override
+              public void onButtonPressed() {
+                presenter.dieRolled();
+              }
+            });
           }
         }
       });
@@ -373,63 +418,70 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    * Pops up a dialog box asking the player to stack all the pieces (or none).
    */
   private void showStackChoice() {
-    new MessageBox("Stack all pieces?", true, new MessageBox.OptionChosen() {
+    new MessageBox("Stack all pieces?", new ConfirmCallback() {
       @Override
-      public void optionChosen(String option) {
-        presenter.stackSelected(option.equals(MessageBox.YES));
+      public void onOk() {
+        presenter.stackSelected(true);
       }
-    }).center();
+
+      @Override
+      public void onCancel() {
+        presenter.stackSelected(false);
+      }
+    });
   }
   
   /**
    * Pops up a dialog box asking whether the player wants to take the shortcut or not.
    */
   private void showShortcutChoice() {
-    new MessageBox("Take shortcut?", true, new MessageBox.OptionChosen() {
+    new MessageBox("Take shortcut?", new ConfirmCallback() {
       @Override
-      public void optionChosen(String option) {
-        presenter.shortcutSelected(option.equals(MessageBox.YES));
+      public void onOk() {
+        presenter.shortcutSelected(true);
       }
-    }).center();
+
+      @Override
+      public void onCancel() {
+        presenter.shortcutSelected(false);
+      }
+    });
   }
   
   /**
    * Pops up a dialog box telling the player that no moves were possible.
    */
   private void showEmptyMove() {
-    new MessageBox("No moves available.", false, new MessageBox.OptionChosen() {
+    new MessageBox("No moves available.", new AlertCallback() {
       @Override
-      public void optionChosen(String option) {
+      public void onButtonPressed() {
         presenter.piecesSelected(Optional.<Piece>absent());
       }
-    }).center();
+    });
   }
   
   /**
    * Pops up a dialog box telling the player that their pieces must be sent back to the Hangar.
    */
   private void showBackToHangar() {
-    new MessageBox(
-        "Rolled three 6's! Last three moves go back to the Hangar.", 
-        false, 
-        new MessageBox.OptionChosen() {
-            @Override
-            public void optionChosen(String option) {
-              presenter.piecesSelected(Optional.<Piece>absent());
-            }
-          }).center();
-    }
+    new MessageBox("Rolled three 6's! Last three moves go back to the Hangar.", new AlertCallback() {
+      @Override
+      public void onButtonPressed() {
+        presenter.piecesSelected(Optional.<Piece>absent());
+      }
+    });
+  }
   
   /**
    * Pops up a dialog box telling the player that a jump occurred.
    */
   private void showJump() {
-    new MessageBox("Automatic jump!", false, new MessageBox.OptionChosen() {
+    new MessageBox("Automatic jump!", new AlertCallback() {
       @Override
-      public void optionChosen(String option) {
+      public void onButtonPressed() {
         presenter.showJump();
       }
-    }).center();
+    });
   }
   
   /**
@@ -753,8 +805,8 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
             || opponentStartPiece.getZone() == Zone.LAUNCH) {  
           opponentStackedLocations.add(opponentStartLocation);
         }
-      }
-    }
+      } 
+    } 
     
     return multipleAnimations;
   }
