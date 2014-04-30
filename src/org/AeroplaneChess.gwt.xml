@@ -16,6 +16,8 @@
 
   <!-- Specify the app entry point class.                         -->
   <entry-point class='org.aeroplanechess.graphics.AeroplaneChessEntryPoint'/>
+  <!-- Japanese language, independent of country -->
+  <extend-property name="locale" values="ja" />
   <!-- Mobile GWT -->
   <inherits name="com.googlecode.mgwt.MGWT"/>
   <!-- GWT Emulator -->

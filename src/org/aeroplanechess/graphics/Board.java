@@ -8,24 +8,34 @@ import org.aeroplanechess.client.Color;
  * of where to place the pieces on the board.
  */
 public final class Board {
-  // Divisor to get mobile coordinates
-  private static final double divisor = 2.5;
+  // Scale to set board coordinates properly
+  private static double scale = 1.0;
+  public static final int GAME_WIDTH = 830;
+  public static final int GAME_HEIGHT = 730;
   
   public static class Point {
     private int x;
     private int y;
     
     Point(int x, int y) {
-      this.x = (int) (x/divisor);
-      this.y = (int) (y/divisor);
+      this.x = x;
+      this.y = y;
     }
     
     public int getX() {
-      return this.x;
+      return x;
     }
     
     public int getY() {
-      return this.y;
+      return y;
+    }
+    
+    public int getScaledX() {
+      return (int) (x * scale);
+    }
+    
+    public int getScaledY() {
+      return (int) (y * scale);
     }
     
     @Override
@@ -173,4 +183,11 @@ public final class Board {
     }
   }
   
+  public static void setScale(double scale) {
+    Board.scale = scale;
+  }
+  
+  public static double getScale() {
+    return Board.scale;
+  }
 }

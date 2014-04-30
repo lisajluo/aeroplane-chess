@@ -16,39 +16,49 @@ import org.game_api.GameApi.VerifyMove;
 import org.aeroplanechess.graphics.AeroplaneChessGraphics;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.event.logical.shared.ResizeEvent;
+import com.google.gwt.event.logical.shared.ResizeHandler;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.googlecode.mgwt.dom.client.event.orientation.OrientationChangeEvent;
-import com.googlecode.mgwt.dom.client.event.orientation.OrientationChangeEvent.ORIENTATION;
 import com.googlecode.mgwt.dom.client.event.orientation.OrientationChangeHandler;
 import com.googlecode.mgwt.dom.client.event.tap.TapEvent;
 import com.googlecode.mgwt.dom.client.event.tap.TapHandler;
 import com.googlecode.mgwt.ui.client.MGWT;
 import com.googlecode.mgwt.ui.client.MGWTSettings;
-import com.googlecode.mgwt.ui.client.MGWTSettings.ViewPort;
-import com.googlecode.mgwt.ui.client.MGWTSettings.ViewPort.DENSITY;
 import com.googlecode.mgwt.ui.client.MGWTStyle;
 import com.googlecode.mgwt.ui.client.widget.Button;
 import com.googlecode.mgwt.ui.client.widget.LayoutPanel;
 import com.googlecode.mgwt.ui.client.theme.base.ButtonCss;
-import com.googlecode.mgwt.ui.client.dialog.Dialogs.AlertCallback;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class AeroplaneChessEntryPoint implements EntryPoint {
-  //ContainerConnector container;
+  ContainerConnector container;
   // Keeping old code in for debug purposes
-  IteratingPlayerContainer container;
+  //IteratingPlayerContainer container;
   AeroplaneChessPresenter aeroplaneChessPresenter;
 
   @Override
   public void onModuleLoad() {
     // Set viewport and other settings for mobile
     MGWT.applySettings(MGWTSettings.getAppSetting());
+    Window.enableScrolling(false);
+    MGWT.addOrientationChangeHandler(new OrientationChangeHandler() {
+      @Override
+      public void onOrientationChanged(OrientationChangeEvent event) {
+        scaleGame();
+      }
+    });
+    Window.addResizeHandler(new ResizeHandler() {
+      @Override
+      public void onResize(ResizeEvent event) {
+        scaleGame();
+      }
+    });
     
     Game game = new Game() {
       @Override
@@ -60,18 +70,18 @@ public class AeroplaneChessEntryPoint implements EntryPoint {
         aeroplaneChessPresenter.updateUI(updateUI);
       }
     };
-    //container = new ContainerConnector(game);
-    container = new IteratingPlayerContainer(game, 2);
+    container = new ContainerConnector(game);
+    //container = new IteratingPlayerContainer(game, 2);
     AeroplaneChessGraphics aeroplaneChessGraphics = new AeroplaneChessGraphics();
     aeroplaneChessPresenter = new AeroplaneChessPresenter(aeroplaneChessGraphics, container);
 
-    LayoutPanel buttonHolder = new LayoutPanel();
-    buttonHolder.addStyleName("marginTop");
-    
+    /*LayoutPanel buttonHolder = new LayoutPanel();
+    buttonHolder.setHorizontal(true);
     final ButtonCss buttonCss = MGWTStyle.getTheme().getMGWTClientBundle().getButtonCss();
-    final Button redPlayer = new Button("Red player");
-    final Button yellowPlayer = new Button("Yellow player");
-    final Button viewer = new Button("Viewer"); 
+    I18nMessages i18n = (I18nMessages) GWT.create(I18nMessages.class);
+    final Button redPlayer = new Button(i18n.redPlayer());
+    final Button yellowPlayer = new Button(i18n.yellowPlayer());
+    final Button viewer = new Button(i18n.viewer()); 
     redPlayer.setSmall(true);
     yellowPlayer.setSmall(true);
     viewer.setSmall(true);
@@ -110,14 +120,27 @@ public class AeroplaneChessEntryPoint implements EntryPoint {
     buttonHolder.add(yellowPlayer);
     buttonHolder.add(viewer);
   
+
     FlowPanel flowPanel = new FlowPanel();
     flowPanel.add(aeroplaneChessGraphics);
     flowPanel.add(buttonHolder);
-    RootPanel.get("mainDiv").add(flowPanel); 
+    RootPanel.get("mainDiv").add(flowPanel); */
     
-    //RootPanel.get("mainDiv").add(aeroplaneChessGraphics);
+    RootPanel.get("mainDiv").add(aeroplaneChessGraphics);
     container.sendGameReady();
-    container.updateUi(container.getPlayerIds().get(0));
-    redPlayer.addStyleName(buttonCss.active());
+   /* container.updateUi(container.getPlayerIds().get(0));
+    redPlayer.addStyleName(buttonCss.active());*/
+    
+    scaleGame();
+  }
+  
+  /**
+   * Dynamically gets window height and width to scale board coordinates properly.
+   */
+  private void scaleGame() {
+    double scaleX = (double) Window.getClientWidth() / Board.GAME_WIDTH;
+    double scaleY = (double) Window.getClientHeight() / Board.GAME_HEIGHT;
+    double scale = Math.min(scaleX, scaleY);
+    Board.setScale(scale);
   }
 }

@@ -21,6 +21,7 @@ import static org.aeroplanechess.client.Constants.PIECES_PER_PLAYER;
 
 import org.aeroplanechess.graphics.Board.Point;
 import org.aeroplanechess.sounds.AeroplaneChessSounds;
+
 import com.google.gwt.user.client.Timer;
 
 import com.google.common.base.Optional;
@@ -46,16 +47,8 @@ import com.google.gwt.core.shared.GWT;
 import com.google.gwt.media.client.Audio;
 import com.google.gwt.resources.client.ImageResource;
 
-import com.googlecode.mgwt.dom.client.event.tap.TapEvent;
-import com.googlecode.mgwt.dom.client.event.tap.TapHandler;
-import com.googlecode.mgwt.dom.client.event.touch.TouchCancelEvent;
-import com.googlecode.mgwt.dom.client.event.touch.TouchEndEvent;
-import com.googlecode.mgwt.dom.client.event.touch.TouchHandler;
-import com.googlecode.mgwt.dom.client.event.touch.TouchMoveEvent;
-import com.googlecode.mgwt.dom.client.event.touch.TouchStartEvent;
 import com.googlecode.mgwt.ui.client.dialog.Dialogs.AlertCallback;
 import com.googlecode.mgwt.ui.client.dialog.ConfirmDialog.ConfirmCallback;
-import com.googlecode.mgwt.ui.client.widget.touch.TouchDelegate;
 
 /**
  * Graphics for the Aeroplane Chess game (board, piece placement, die).
@@ -74,7 +67,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   boolean showAnimation = false;
   private PieceMovingAnimation animation;
   private static final String LIGHT_SHADOW = "lightShadow";
-  private PickupDragController dragController;
+  //private PickupDragController dragController;
   Image targetImage = null;
   SimplePanel target = null;
   private final AeroplaneChessSounds aeroplaneChessSounds;
@@ -86,6 +79,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   private Audio dieRoll;
   private Audio winGame;
   private Audio loseGame;
+  private final I18nMessages i18n;
   
   /** True to enable clicks on the board (on many moves the player just chooses an option in
    * a popup selector).
@@ -99,10 +93,11 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
     AeroplaneChessImages aeroplaneChessImages = GWT.create(AeroplaneChessImages.class);
     this.imageSupplier = new AeroplaneChessImageSupplier(aeroplaneChessImages);
     this.aeroplaneChessSounds = GWT.create(AeroplaneChessSounds.class);
+    this.i18n = (I18nMessages) GWT.create(I18nMessages.class);
     initializeAudio();
     AeroplaneChessGraphicsUiBinder uiBinder = GWT.create(AeroplaneChessGraphicsUiBinder.class);
     initWidget(uiBinder.createAndBindUi(this));
-    initializeDragAndDrop();
+    //initializeDragAndDrop();
   }
   
   @Override
@@ -164,7 +159,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   public void checkGameOver(AeroplaneChessMessage message) {
     if (message == AeroplaneChessMessage.WON_GAME) { 
       playAudio(winGame);
-      new MessageBox("You won!", new AlertCallback() {
+      new MessageBox(i18n.won(), i18n.ok(), new AlertCallback() {
         @Override
         public void onButtonPressed() {
           // Do nothing
@@ -173,7 +168,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
     }
     else if (message == AeroplaneChessMessage.LOST_GAME) { 
       playAudio(loseGame);
-      new MessageBox("You lost!", new AlertCallback() {
+      new MessageBox(i18n.lost(), i18n.ok(), new AlertCallback() {
         @Override
         public void onButtonPressed() {
           // Do nothing
@@ -195,9 +190,10 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    */
   public void putBoard (List<Piece> myPieces, List<Piece> opponentPieces, 
       AeroplaneChessMessage message, int die) {
-    removeDropHandlers();
+    //removeDropHandlers();
     boardArea.clear();
     Image board = new Image(imageSupplier.getBoard());
+    
     boardArea.add(board);
     putPieces(myPieces);
     putPieces(opponentPieces);
@@ -246,16 +242,6 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
           // We can get the Image of the piece at this location using the TOP and LEFT coordinates. 
           final Image image = (Image) getWidgetAtLocation(coord);
           image.setResource(imageSupplier.getPiece(PieceImage.Factory.getPiece(piece, true)));
-          /* Tap functionality - doesn't work well in desktop
-          new TouchDelegate(image).addTapHandler(new TapHandler() {
-            @Override
-            public void onTap(TapEvent event) {
-              if (enablePieceClick) {
-                presenter.piecesSelected(Optional.<Piece>of(piece));
-                enablePieceClick = false;
-              }
-            }
-          }); */
           // Click functionality
           image.addClickHandler(new ClickHandler() {
             @Override
@@ -268,7 +254,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
           });
           
           // Drag and drop functionality
-          dragController.makeDraggable(image);
+          //dragController.makeDraggable(image);
         }
         // Prevent the addition of any other handlers at this location. If it's the launch or 
         // stacked pieces we can just arbitrarily pick the first one we see.
@@ -283,7 +269,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   /**
    * Adds drop handlers for every possible destination.
    */
-  private void putDropHandlers(final Piece piece) {
+  /*private void putDropHandlers(final Piece piece) {
     removeDropHandlers();
     Piece dropPiece = presenter.getDestination(piece);
 
@@ -314,18 +300,18 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       }
     };
     dragController.registerDropController(dropController);
-  }
+  }*/
   
   /**
    * Removes all drop handlers.
    */
-  private void removeDropHandlers() {
+  /*private void removeDropHandlers() {
     if (target != null) {
       target.clear();
       boardArea.remove(target);
     }
     dragController.unregisterDropControllers();
-  }
+  }*/
   
   /**
    * Returns the widget in the board area with the TOP/LEFT coordinates specified.
@@ -334,8 +320,9 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
     Iterator<Widget> widgets = boardArea.iterator();
     while (widgets.hasNext()) {
       Widget widget = widgets.next();
-      if (boardArea.getWidgetLeft(widget) == coordinates.getX() 
-          && boardArea.getWidgetTop(widget) == coordinates.getY()) {
+
+      if (boardArea.getWidgetLeft(widget) == coordinates.getScaledX()  
+          && boardArea.getWidgetTop(widget) == coordinates.getScaledY()) {
         return widget;
       }
     }
@@ -373,23 +360,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
     if (clickable) {
       enableDieClick = true;
       image = new Image(imageSupplier.getDie(DieImage.Factory.getDie(0)));
-      /* Tap functionality - doesn't work well in desktop
-      new TouchDelegate(image).addTapHandler(new TapHandler() {
-        @Override
-        public void onTap(TapEvent event) {
-          if (enableDieClick) {
-            playAudio(dieRoll);
-            image.setResource(imageSupplier.getDie(DieImage.Factory.getDie(die)));
-            enableDieClick = false;
-            new MessageBox("You rolled a " + die + "!", new AlertCallback() {
-              @Override
-              public void onButtonPressed() {
-                presenter.dieRolled();
-              }
-            });
-          }
-        }
-      }); */
+      
       image.addClickHandler(new ClickHandler() {
         @Override
         public void onClick(ClickEvent event) {
@@ -397,7 +368,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
             playAudio(dieRoll);
             image.setResource(imageSupplier.getDie(DieImage.Factory.getDie(die)));
             enableDieClick = false;
-            new MessageBox("You rolled a " + die + "!", new AlertCallback() {
+            new MessageBox(i18n.rolled(die), i18n.ok(), new AlertCallback() {
               @Override
               public void onButtonPressed() {
                 presenter.dieRolled();
@@ -418,7 +389,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    * Pops up a dialog box asking the player to stack all the pieces (or none).
    */
   private void showStackChoice() {
-    new MessageBox("Stack all pieces?", new ConfirmCallback() {
+    new MessageBox(i18n.stack(), i18n.yes(), i18n.no(), new ConfirmCallback() {
       @Override
       public void onOk() {
         presenter.stackSelected(true);
@@ -435,7 +406,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    * Pops up a dialog box asking whether the player wants to take the shortcut or not.
    */
   private void showShortcutChoice() {
-    new MessageBox("Take shortcut?", new ConfirmCallback() {
+    new MessageBox(i18n.shortcut(), i18n.yes(), i18n.no(), new ConfirmCallback() {
       @Override
       public void onOk() {
         presenter.shortcutSelected(true);
@@ -452,7 +423,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    * Pops up a dialog box telling the player that no moves were possible.
    */
   private void showEmptyMove() {
-    new MessageBox("No moves available.", new AlertCallback() {
+    new MessageBox(i18n.noMoves(), i18n.ok(), new AlertCallback() {
       @Override
       public void onButtonPressed() {
         presenter.piecesSelected(Optional.<Piece>absent());
@@ -464,7 +435,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    * Pops up a dialog box telling the player that their pieces must be sent back to the Hangar.
    */
   private void showBackToHangar() {
-    new MessageBox("Rolled three 6's! Last three moves go back to the Hangar.", new AlertCallback() {
+    new MessageBox(i18n.backToHangar(), i18n.ok(), new AlertCallback() {
       @Override
       public void onButtonPressed() {
         presenter.piecesSelected(Optional.<Piece>absent());
@@ -476,7 +447,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    * Pops up a dialog box telling the player that a jump occurred.
    */
   private void showJump() {
-    new MessageBox("Automatic jump!", new AlertCallback() {
+    new MessageBox(i18n.jump(), i18n.ok(), new AlertCallback() {
       @Override
       public void onButtonPressed() {
         presenter.showJump();
@@ -487,7 +458,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   /**
    * Initialize dragging on the board.
    */
-  private void initializeDragAndDrop() {
+  /*private void initializeDragAndDrop() {
     dragController = new PickupDragController(boardArea, false);
     dragController.setBehaviorDragStartSensitivity(3);
     dragController.setBehaviorMultipleSelection(false);
@@ -520,7 +491,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
         removeDropHandlers();
       }
     });
-  }
+  }*/
   
   /**
    * Initializes audio resources (if supported).
@@ -827,8 +798,9 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       boardArea.add(oldImage, startCoord.getX(), startCoord.getY());
     }
     
-    animation = new PieceMovingAnimation(startImage, endImage, startResource, endResource, 
-        imageSupplier.getEmptyPiece(), audio, boardArea, playAtStart);
+    animation = new PieceMovingAnimation(startImage, endImage, startResource, endResource,
+        imageSupplier.getEmptyPiece(), startCoord, endLocation, audio, boardArea, 
+        playAtStart);
     animation.run(duration);
   }
 }

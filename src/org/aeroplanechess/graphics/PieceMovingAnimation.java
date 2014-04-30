@@ -5,6 +5,8 @@
  */
 package org.aeroplanechess.graphics;
 
+import org.aeroplanechess.graphics.Board.Point;
+
 import com.google.gwt.animation.client.Animation;
 import com.google.gwt.media.client.Audio;
 import com.google.gwt.resources.client.ImageResource;
@@ -22,20 +24,20 @@ public class PieceMovingAnimation extends Animation {
   boolean playAtStart;
 
   public PieceMovingAnimation(Image startImage, Image endImage, ImageResource startRes, 
-      ImageResource endRes, ImageResource blankRes, Audio sfx, AbsolutePanel board, 
-      boolean playBeginning) {
+      ImageResource endRes, ImageResource blankRes, Point startLocation, Point endLocation, 
+      Audio sfx, AbsolutePanel board, boolean playBeginning) {
     playAtStart = playBeginning;
     start = startImage;
     end = endImage;
     piece = startRes;
     transform = endRes == null ? startRes : endRes;
     panel = board;
-    startX = panel.getWidgetLeft(start);
-    startY = panel.getWidgetTop(start);
+    startX = startLocation.getX();
+    startY = startLocation.getY();
     startWidth = startImage.getWidth();
     startHeight = startImage.getHeight();
-    endX = panel.getWidgetLeft(end);
-    endY = panel.getWidgetTop(end);
+    endX = endLocation.getX();
+    endY = endLocation.getY();
     audio = sfx;
     cancelled = false;
 
@@ -62,7 +64,7 @@ public class PieceMovingAnimation extends Animation {
     panel.remove(moving);
     moving = new Image(piece.getSafeUri());
     moving.setPixelSize(width, height);
-    panel.add(moving, x, y);
+    panel.add(moving, x, y); 
   }
 
   @Override

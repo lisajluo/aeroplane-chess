@@ -3,7 +3,7 @@
   xmlns:g="urn:import:com.google.gwt.user.client.ui" 
   xmlns:mgwt="urn:import:com.googlecode.mgwt.ui.client.widget">
   <g:HorizontalPanel>
-    <g:AbsolutePanel height="285px" width="285px" ui:field="boardArea"/>
-    <g:FlowPanel height="285px" width="30px" ui:field="dieArea"/>
+    <g:AbsolutePanel height="710px" width="705px" ui:field="boardArea"/>
+    <g:FlowPanel height="710px" width="95px" ui:field="dieArea"/>
   </g:HorizontalPanel>
 </ui:UiBinder> 
