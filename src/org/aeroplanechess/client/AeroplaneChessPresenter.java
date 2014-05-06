@@ -6,9 +6,11 @@
 package org.aeroplanechess.client;
 
 import java.util.List;
+import java.util.Random;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
+import com.google.gwt.user.client.Timer;
 
 import org.game_api.GameApi.UpdateUI;
 import org.game_api.GameApi.Container;
@@ -155,7 +157,7 @@ public class AeroplaneChessPresenter {
     }
     
     aeroplaneChessState = aeroplaneChessLogic.gameApiStateToAeroplaneChessState(
-        updateUI.getState(), 
+        updateUI.getState(),
         turn, 
         playerIds);
     
@@ -171,13 +173,7 @@ public class AeroplaneChessPresenter {
       return;
     }
     
-    if (updateUI.isAiPlayer()) {
-      // TODO: implement AI in a later HW!
-      //container.sendMakeMove(..);
-      return;
-    }
-    
-    // Either R or Y player
+    // Either R or Y player (or AI)
     Color myC = myColor.get();
     Color opponentColor = myC.getOppositeColor();
     
@@ -187,8 +183,68 @@ public class AeroplaneChessPresenter {
         aeroplaneChessState.getDie(), 
         getAeroplaneChessMessage(),
         lastAction);
+    
+    if (updateUI.isAiPlayer()) {
+      if (isMyTurn()) {
+        Timer aiTimer = new Timer() { 
+          public void run() {
+            makeAiMove(getAeroplaneChessMessage());
+          }
+        };
+        // Offset move by the duration of previous player's move + AI "thinking time"
+        int firstDuration = lastAction == Action.TAKE_SHORTCUT ? SHORTCUT_DURATION : NORMAL_DURATION;
+        aiTimer.schedule(firstDuration + AI_DURATION);
+      }
+      return;
+    }
   }
   
+  /**
+   * Since this game is based on die roll, the AI will just pick a move randomly given the options
+   * that can be taken at this state.
+   */
+  private void makeAiMove(AeroplaneChessMessage aeroplaneChessMessage) {
+    Random randomGenerator = new Random();
+    
+    switch (aeroplaneChessMessage) {
+      case ROLL_AVAILABLE:
+        List<Piece> possiblePieces = getPossiblePieces();
+        if (possiblePieces.isEmpty()) {
+          // If there are no available piece choices, choose nothing
+          piecesSelected(Optional.<Piece>absent());
+        }
+        else { 
+          // Otherwise pick a random piece (this also covers the sendToHangar case since
+          // that is checked for directly in piecesSelected).
+          int randomPieceIndex = randomGenerator.nextInt(possiblePieces.size());
+          piecesSelected(Optional.<Piece>of(possiblePieces.get(randomPieceIndex)));
+        }
+      break;
+      case STACK_AVAILABLE:
+        // Choose to stack (true) or not stack (false) using random generator
+        stackSelected(randomGenerator.nextInt(2) == 0);
+      break;
+      case SHORTCUT_AVAILABLE:
+        // Choose to take shortcut (true) or not take shortcut (false) using random generator
+        shortcutSelected(randomGenerator.nextInt(2) == 0);
+      break;
+      case JUMP_AVAILABLE:
+        // No choice to be made - just auto jump
+        showJump();
+      break;
+      case WON_GAME:
+        // Pass turn to other player (so they can know they lost)
+        passTurn();
+      break;
+      case LOST_GAME:
+        // Do nothing (other player already was notified of win)
+      break;
+      default: 
+        // All cases are covered except OTHER_TURN which won't call this method
+      break;
+    }
+  }
+
   /**
    * Returns a message that is sent to the View specifying how the View should interact with the 
    * player; see AeroplaneChessMessage.

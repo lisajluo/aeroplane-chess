@@ -29,12 +29,6 @@ import com.google.common.collect.Lists;
 import com.google.gwt.dom.client.AudioElement;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.allen_sauer.gwt.dnd.client.DragContext;
-import com.allen_sauer.gwt.dnd.client.DragEndEvent;
-import com.allen_sauer.gwt.dnd.client.DragHandlerAdapter;
-import com.allen_sauer.gwt.dnd.client.DragStartEvent;
-import com.allen_sauer.gwt.dnd.client.PickupDragController;
-import com.allen_sauer.gwt.dnd.client.drop.SimpleDropController;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -67,7 +61,6 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   boolean showAnimation = false;
   private PieceMovingAnimation animation;
   private static final String LIGHT_SHADOW = "lightShadow";
-  //private PickupDragController dragController;
   Image targetImage = null;
   SimplePanel target = null;
   private final AeroplaneChessSounds aeroplaneChessSounds;
@@ -97,7 +90,6 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
     initializeAudio();
     AeroplaneChessGraphicsUiBinder uiBinder = GWT.create(AeroplaneChessGraphicsUiBinder.class);
     initWidget(uiBinder.createAndBindUi(this));
-    //initializeDragAndDrop();
   }
   
   @Override
@@ -162,7 +154,8 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       new MessageBox(i18n.won(), i18n.ok(), new AlertCallback() {
         @Override
         public void onButtonPressed() {
-          // Do nothing
+          // Pass turn to other player (so they can know they lost)
+          presenter.piecesSelected(Optional.<Piece>absent());
         }
       });
     }
@@ -171,7 +164,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       new MessageBox(i18n.lost(), i18n.ok(), new AlertCallback() {
         @Override
         public void onButtonPressed() {
-          // Do nothing
+          // Do nothing (other player already was notified of win)
         }
       });
     }
@@ -190,7 +183,6 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    */
   public void putBoard (List<Piece> myPieces, List<Piece> opponentPieces, 
       AeroplaneChessMessage message, int die) {
-    //removeDropHandlers();
     boardArea.clear();
     Image board = new Image(imageSupplier.getBoard());
     
@@ -253,8 +245,6 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
             }
           });
           
-          // Drag and drop functionality
-          //dragController.makeDraggable(image);
         }
         // Prevent the addition of any other handlers at this location. If it's the launch or 
         // stacked pieces we can just arbitrarily pick the first one we see.
@@ -265,53 +255,6 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       enablePieceClick = true;
     }
   }
-  
-  /**
-   * Adds drop handlers for every possible destination.
-   */
-  /*private void putDropHandlers(final Piece piece) {
-    removeDropHandlers();
-    Piece dropPiece = presenter.getDestination(piece);
-
-    Point destination = Board.getCoordinates(
-        dropPiece.getColor(), dropPiece.getZone(), dropPiece.getSpace());
-    targetImage = new Image(imageSupplier.getDropHighlight());
-    targetImage.getElement().addClassName(LIGHT_SHADOW);
-    target = new SimplePanel(targetImage);
-    boardArea.add(target, destination.getX(), destination.getY());     
-    SimpleDropController dropController = new SimpleDropController(target) {
-      @Override
-      public void onDrop(DragContext context) {
-        super.onDrop(context);
-        showAnimation = false;
-        presenter.piecesSelected(Optional.<Piece>of(piece));
-      }
-      
-      @Override
-      public void onEnter(DragContext context) {
-        super.onEnter(context);
-        targetImage.getElement().removeClassName(LIGHT_SHADOW);
-      }
-      
-      @Override
-      public void onLeave(DragContext context) {
-        targetImage.getElement().addClassName(LIGHT_SHADOW);
-        super.onLeave(context);
-      }
-    };
-    dragController.registerDropController(dropController);
-  }*/
-  
-  /**
-   * Removes all drop handlers.
-   */
-  /*private void removeDropHandlers() {
-    if (target != null) {
-      target.clear();
-      boardArea.remove(target);
-    }
-    dragController.unregisterDropControllers();
-  }*/
   
   /**
    * Returns the widget in the board area with the TOP/LEFT coordinates specified.
@@ -454,44 +397,6 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       }
     });
   }
-  
-  /**
-   * Initialize dragging on the board.
-   */
-  /*private void initializeDragAndDrop() {
-    dragController = new PickupDragController(boardArea, false);
-    dragController.setBehaviorDragStartSensitivity(3);
-    dragController.setBehaviorMultipleSelection(false);
-    dragController.setBehaviorConstrainedToBoundaryPanel(true);
-    dragController.addDragHandler(new DragHandlerAdapter() {
-      @Override
-      public void onDragStart(DragStartEvent event) {
-        Image draggedImage = (Image) event.getContext().draggable;
-        int x = boardArea.getWidgetLeft(draggedImage);
-        int y = boardArea.getWidgetTop(draggedImage);
-        
-        for (Piece piece : myOldPieces) {
-          Point location = Board.getCoordinates(piece.getColor(), piece.getZone(), piece.getSpace());
-          if (location.getX() == x && location.getY() == y) {
-            if (multipleInLocation(myOldPieces, piece)) {
-              Point startCoord = Board.getCoordinates(
-                  piece.getColor(), piece.getZone(), piece.getSpace());
-              Image oldImage = new Image(
-                  imageSupplier.getPiece(PieceImage.Factory.getPiece(piece, false)));
-              boardArea.add(oldImage, startCoord.getX(), startCoord.getY());
-            }
-            putDropHandlers(piece);
-            break;
-          }
-        }
-      }
-      
-      @Override
-      public void onDragEnd(DragEndEvent event) {
-        removeDropHandlers();
-      }
-    });
-  }*/
   
   /**
    * Initializes audio resources (if supported).
