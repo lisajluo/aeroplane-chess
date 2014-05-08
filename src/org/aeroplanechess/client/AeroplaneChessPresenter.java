@@ -93,10 +93,10 @@ public class AeroplaneChessPresenter {
     /**
      * Sets the state for a player (whether the player has the turn or not).
      * Whether or not certain board interactions are available (ie., TAXI, TAKE_SHORTCUT, STACK, 
-     * etc.) depends on AeroplaneChessMessage.
+     * etc.) depends on AeroplaneChessMessage (and if the view is for AI).
      */
     void setPlayerState(List<Piece> myPieces, List<Piece> opponentPieces, int die,
-        AeroplaneChessMessage aeroplaneChessMessage, Action lastAction);
+        AeroplaneChessMessage aeroplaneChessMessage, Action lastAction, boolean isAI);
     
     /**
      * Asks the player to choose which pieces to taxi or move. The player will select using
@@ -162,8 +162,10 @@ public class AeroplaneChessPresenter {
         playerIds);
     
     Action lastAction = aeroplaneChessState.getAction();
+    AeroplaneChessMessage aeroplaneChessMessage = getAeroplaneChessMessage();
     
-    if (updateUI.isViewer()) {  // The viewer can see the board and die roll but can't interact.
+    // The viewer can see the board and die roll but can't interact.
+    if (updateUI.isViewer()) {  
       view.setViewerState(
           aeroplaneChessState.getPieces(Color.R), 
           aeroplaneChessState.getPieces(Color.Y), 
@@ -176,15 +178,18 @@ public class AeroplaneChessPresenter {
     // Either R or Y player (or AI)
     Color myC = myColor.get();
     Color opponentColor = myC.getOppositeColor();
+    boolean isAiPlayer = updateUI.isAiPlayer();
+    
     
     view.setPlayerState(
         aeroplaneChessState.getPieces(myC), 
         aeroplaneChessState.getPieces(opponentColor), 
         aeroplaneChessState.getDie(), 
         getAeroplaneChessMessage(),
-        lastAction);
+        lastAction,
+        isAiPlayer);
     
-    if (updateUI.isAiPlayer()) {
+    if (isAiPlayer) {
       if (isMyTurn()) {
         Timer aiTimer = new Timer() { 
           public void run() {
@@ -193,7 +198,7 @@ public class AeroplaneChessPresenter {
         };
         // Offset move by the duration of previous player's move + AI "thinking time"
         int firstDuration = lastAction == Action.TAKE_SHORTCUT ? SHORTCUT_DURATION : NORMAL_DURATION;
-        aiTimer.schedule(firstDuration + AI_DURATION);
+        aiTimer.schedule(firstDuration + AI_THINK_DURATION);
       }
       return;
     }

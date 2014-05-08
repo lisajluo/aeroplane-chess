@@ -110,10 +110,10 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
 
   @Override
   public void setPlayerState(final List<Piece> myPieces, final List<Piece> opponentPieces, 
-      final int die, final AeroplaneChessMessage message, Action lastAction) {
+      final int die, final AeroplaneChessMessage message, Action lastAction, final boolean isAiPlayer) {
     
     if (myOldPieces == null || !showAnimation) { // Initialize board on first updateUI
-      putBoard(myPieces, opponentPieces, message, die);
+      putBoard(myPieces, opponentPieces, message, die, isAiPlayer);
       checkGameOver(message);
     }
     else { // Animate on subsequent moves
@@ -130,7 +130,7 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
       
       Timer animationTimer = new Timer() { 
         public void run() {
-          putBoard(myPieces, opponentPieces, message, die);
+          putBoard(myPieces, opponentPieces, message, die, isAiPlayer);
           checkGameOver(message);
         }
       }; 
@@ -179,10 +179,11 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   }-*/;
   
   /**
-   * Put the pieces and show the die or a dialog box depending on the message received.
+   * Put the pieces and show the die or a dialog box depending on the message received (if not
+   * AI player).
    */
   public void putBoard (List<Piece> myPieces, List<Piece> opponentPieces, 
-      AeroplaneChessMessage message, int die) {
+      AeroplaneChessMessage message, int die, boolean isAiPlayer) {
     boardArea.clear();
     Image board = new Image(imageSupplier.getBoard());
     
@@ -195,21 +196,24 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
      * turn has ended.
      */
     if (message == AeroplaneChessMessage.ROLL_AVAILABLE) {
-      putDie(die, true);
+      // Show the interaction only if not AI player
+      putDie(die, !isAiPlayer);
     }
     
-    switch (message) {
-      case STACK_AVAILABLE:
-        showStackChoice();
-        break;
-      case SHORTCUT_AVAILABLE:
-        showShortcutChoice();
-        break;
-      case JUMP_AVAILABLE:
-        showJump();
-        break;
-      default: // Do nothing for OTHER_TURN. ROLL_AVAILABLE is handled by die onClick.
-        break;
+    if (!isAiPlayer) {
+      switch (message) {
+        case STACK_AVAILABLE:
+          showStackChoice();
+          break;
+        case SHORTCUT_AVAILABLE:
+          showShortcutChoice();
+          break;
+        case JUMP_AVAILABLE:
+          showJump();
+          break;
+        default: // Do nothing for OTHER_TURN. ROLL_AVAILABLE is handled by die onClick.
+          break;
+      }
     }
   }
 
@@ -295,7 +299,8 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
    * Puts the image of the die given its rolled value - for the viewer/other player.
    * For the current player, the image is highlighted and clickable.  When the player clicks
    * on the highlighted die, it will be replaced with the image corresponding to the rolled
-   * value, and the player will be allowed to select pieces to move (if any).
+   * value, and the player will be allowed to select pieces to move (if any).  For AI/viewer,
+   * you only see the image of the die (no interaction).
    */
   private void putDie(final int die, boolean clickable) {
     dieArea.clear();
@@ -311,12 +316,8 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
             playAudio(dieRoll);
             image.setResource(imageSupplier.getDie(DieImage.Factory.getDie(die)));
             enableDieClick = false;
-            new MessageBox(i18n.rolled(die), i18n.ok(), new AlertCallback() {
-              @Override
-              public void onButtonPressed() {
-                presenter.dieRolled();
-              }
-            });
+            presenter.dieRolled();
+
           }
         }
       });
@@ -387,15 +388,10 @@ public class AeroplaneChessGraphics extends Composite implements AeroplaneChessP
   }
   
   /**
-   * Pops up a dialog box telling the player that a jump occurred.
+   * Show the jump on the screen (dialog box removed).
    */
   private void showJump() {
-    new MessageBox(i18n.jump(), i18n.ok(), new AlertCallback() {
-      @Override
-      public void onButtonPressed() {
-        presenter.showJump();
-      }
-    });
+    presenter.showJump();
   }
   
   /**
