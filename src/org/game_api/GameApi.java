@@ -71,7 +71,9 @@ public final class GameApi {
     }
 
     public static native void postMessageToParent(String message) /*-{
-      $wnd.parent.postMessage(JSON.parse(message), "*");
+      var msg = JSON.parse(message);
+      console.log('Message to container', msg);
+      $wnd.platform.gotMessage(msg);
     }-*/;
 
     public void eventListner(String message) {
@@ -85,10 +87,16 @@ public final class GameApi {
 
     private native void injectEventListener(ContainerConnector containerConnector) /*-{
       function postMessageListener(e) {
-        var str = JSON.stringify(e.data);
+        passMessage(e.data);
+      }
+      function passMessage(message) {
+        console.log('Message from container', message);
+        var str = JSON.stringify(message);
         var c = containerConnector;
         c.@org.game_api.GameApi.ContainerConnector::eventListner(Ljava/lang/String;)(str);
       }
+      $wnd.passMessage = passMessage;
+      console.log('Setting passMessage');
       $wnd.addEventListener("message", postMessageListener, false);
     }-*/;
 
@@ -1015,9 +1023,6 @@ public final class GameApi {
   public static final class GameApiJsonHelper {
     private GameApiJsonHelper() { }
 
-    private static final List<String> INTEGER_MAP_NAMES = ImmutableList.<String>of(
-        "playerIdToNumberOfTokensInPot", "playerIdToTokenChange", "playerIdToScore");
-
     public static String getJsonString(Message messageObject) {
       Map<String, Object> messageMap = messageObject.toMessage();
       return getJsonStringFromMap(messageMap);
@@ -1043,11 +1048,7 @@ public final class GameApi {
         } else if (entry.getValue() instanceof List) {
           jsonVal = getJsonArray((List<Object>) entry.getValue());
         } else if (entry.getValue() instanceof Map) {
-          if (INTEGER_MAP_NAMES.contains(entry.getKey())) {
-            jsonVal = getJsonObjectFromIntegerMap((Map<String, Integer>) entry.getValue());
-          } else {
-            jsonVal = getJsonObject((Map<String, Object>) entry.getValue());
-          }
+          jsonVal = getJsonObject((Map<String, Object>) entry.getValue());
         } else {
           throw new IllegalStateException("Invalid object encountered");
         }
@@ -1116,23 +1117,10 @@ public final class GameApi {
         } else if (jsonVal instanceof JSONArray) {
           map.put(key, getListFromJsonArray((JSONArray) jsonVal));
         } else if (jsonVal instanceof JSONObject) {
-          if (INTEGER_MAP_NAMES.contains(key)) {
-            map.put(key, getIntegerMapFromJsonObject((JSONObject) jsonVal));
-          } else {
-            map.put(key, getMapFromJsonObject((JSONObject) jsonVal));
-          }
+          map.put(key, getMapFromJsonObject((JSONObject) jsonVal));
         } else {
           throw new IllegalStateException("Invalid JSONValue encountered");
         }
-      }
-      return map;
-    }
-
-    public static Map<Integer, Integer> getIntegerMapFromJsonObject(JSONObject jsonObj) {
-      Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-      for (String key : jsonObj.keySet()) {
-        JSONValue jsonVal = jsonObj.get(key);
-        map.put(Integer.parseInt(key), new Integer((int) ((JSONNumber) jsonVal).doubleValue()));
       }
       return map;
     }

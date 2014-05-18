@@ -102,5 +102,5 @@ public final class Constants {
   public static final int SHORTCUT_DURATION = 1000;
   
   /* AI timer to "think" like a normal player */
-  public static final int AI_THINK_DURATION = 2000;
+  public static final int AI_THINK_DURATION = 1000;
 }

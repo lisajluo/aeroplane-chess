@@ -277,7 +277,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     /*
@@ -317,7 +318,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -346,7 +348,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -387,7 +390,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, turnChangedState),  // Opponent pieces
         (int) turnChangedState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   
@@ -417,7 +421,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, false);
@@ -445,7 +450,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -470,7 +476,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   
@@ -488,7 +495,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, noMoveAvailableState),  // Opponent pieces
         (int) noMoveAvailableState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, false);
@@ -532,7 +540,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, true);
@@ -567,7 +576,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -596,7 +606,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     verify(mockView).choosePieces(EMPTY_PIECES, true);
@@ -630,7 +641,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, tripleSixState),  // Opponent pieces
         (int) tripleSixState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -659,7 +671,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
         AeroplaneChessMessage.STACK_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     // Pieces that can be stacked as we just moved them. (Have to set representation to STACKED)
     Piece r0Stacked = aeroplaneChessLogic.gameApiPieceToAeroplaneChessPiece(
@@ -692,7 +705,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -717,7 +731,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Y decides **not** to stack the pieces. */
@@ -734,7 +749,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, stackAvailableState),  // Opponent pieces
         (int) stackAvailableState.get(DIE), 
         AeroplaneChessMessage.STACK_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     // Pieces that can be stacked as we just moved them (however we chose not to stack)
     List<Piece> stackablePieces = Lists.newArrayList(
@@ -779,7 +795,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
         AeroplaneChessMessage.SHORTCUT_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     // Pieces that can take the shortcut
     List<Piece> shortcutPieces = Lists.newArrayList(
@@ -806,7 +823,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -835,7 +853,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
         AeroplaneChessMessage.SHORTCUT_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.shortcutSelected(false);
     
@@ -857,7 +876,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, shortcutAvailableState),  // Opponent pieces
         (int) shortcutAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -886,7 +906,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
         AeroplaneChessMessage.JUMP_AVAILABLE,
-        Action.STACK);
+        Action.STACK,
+        false);
     
     aeroplaneChessPresenter.showJump();
     
@@ -918,7 +939,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.STACK);
+        Action.STACK,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -946,7 +968,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
         AeroplaneChessMessage.JUMP_AVAILABLE,
-        Action.STACK);
+        Action.STACK,
+        false);
     
     aeroplaneChessPresenter.showJump();
     
@@ -978,7 +1001,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, jumpAvailableState),  // Opponent pieces
         (int) jumpAvailableState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.STACK);
+        Action.STACK,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -1007,7 +1031,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1039,7 +1064,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -1068,7 +1094,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1100,7 +1127,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, nearEndBacktrackState),  // Opponent pieces
         (int) nearEndBacktrackState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   
@@ -1130,7 +1158,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1162,7 +1191,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   /* Viewer should never have any interactions, but can view everything on the board. */
@@ -1191,7 +1221,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.R, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
         AeroplaneChessMessage.ROLL_AVAILABLE,
-        Action.MOVE);
+        Action.MOVE,
+        false);
     
     aeroplaneChessPresenter.dieRolled();
     
@@ -1223,7 +1254,8 @@ public class AeroplaneChessPresenterTest {
         getPieces(Color.Y, endWinningState),  // Opponent pieces
         (int) endWinningState.get(DIE), 
         AeroplaneChessMessage.OTHER_TURN,
-        Action.MOVE);
+        Action.MOVE,
+        false);
   }
   
   
